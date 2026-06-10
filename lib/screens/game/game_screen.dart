@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 
 import '../../app/theme.dart';
+import '../../app/woven_background.dart';
 import '../../game/adinkra_gems_game.dart';
 import '../../game/data/levels.dart';
 import '../../game/systems/level_controller.dart';
@@ -59,7 +60,9 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _onLevelStateChanged() {
-    if (_levelController != null && _levelController!.isGameOver && !_savingProgress) {
+    if (_levelController != null &&
+        _levelController!.isGameOver &&
+        !_savingProgress) {
       _showGameOverMenu();
     }
   }
@@ -131,7 +134,7 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     if (_game == null || _levelController == null) {
       return const Scaffold(
-        backgroundColor: AdinkraTheme.richBlack,
+        backgroundColor: AdinkraTheme.cream,
         body: Center(
           child: CircularProgressIndicator(color: AdinkraTheme.primaryGold),
         ),
@@ -139,56 +142,60 @@ class _GameScreenState extends State<GameScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AdinkraTheme.richBlack,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ── HUD (rebuilds dynamically when LevelController alerts listeners) ──
-            ListenableBuilder(
-              listenable: _levelController!,
-              builder: (context, child) {
-                return GameHud(
-                  levelController: _levelController!,
-                  onPause: () => _showPauseMenu(context),
-                );
-              },
-            ),
+      backgroundColor: AdinkraTheme.cream,
+      body: WovenBackground(
+        overlayOpacity: 0.16,
+        child: SafeArea(
+          child: Column(
+            children: [
+              // ── HUD (rebuilds dynamically when LevelController alerts listeners) ──
+              ListenableBuilder(
+                listenable: _levelController!,
+                builder: (context, child) {
+                  return GameHud(
+                    levelController: _levelController!,
+                    onPause: () => _showPauseMenu(context),
+                  );
+                },
+              ),
 
-            // ── Board area ──
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    colors: [
-                      AdinkraTheme.deepPurple.withOpacity(0.5),
-                      AdinkraTheme.richBlack,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              // ── Board area ──
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
                   ),
-                  border: Border.all(
-                    color: AdinkraTheme.primaryGold.withOpacity(0.2),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AdinkraTheme.deepPurple.withOpacity(0.4),
-                      blurRadius: 24,
-                      spreadRadius: 2,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      colors: [
+                        AdinkraTheme.cocoa.withOpacity(0.9),
+                        AdinkraTheme.darkCocoa,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: GameWidget(
-                    game: _game!,
+                    border: Border.all(
+                      color: AdinkraTheme.cocoa.withOpacity(0.45),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AdinkraTheme.cocoa.withOpacity(0.28),
+                        blurRadius: 24,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: GameWidget(game: _game!),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -213,10 +220,7 @@ class _GameScreenState extends State<GameScreen> {
 // Pause menu dialog
 // ─────────────────────────────────────────────
 class _PauseDialog extends StatelessWidget {
-  const _PauseDialog({
-    required this.onResume,
-    required this.onQuit,
-  });
+  const _PauseDialog({required this.onResume, required this.onQuit});
 
   final VoidCallback onResume;
   final VoidCallback onQuit;
@@ -228,23 +232,26 @@ class _PauseDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A0035),
+          color: AdinkraTheme.lightCream,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: AdinkraTheme.primaryGold.withOpacity(0.35),
+            color: AdinkraTheme.cocoa.withOpacity(0.35),
             width: 1,
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.pause_circle_rounded,
-                color: AdinkraTheme.primaryGold, size: 44),
+            const Icon(
+              Icons.pause_circle_rounded,
+              color: AdinkraTheme.terracotta,
+              size: 44,
+            ),
             const SizedBox(height: 12),
             const Text(
               'PAUSED',
               style: TextStyle(
-                color: AdinkraTheme.primaryGold,
+                color: AdinkraTheme.darkCocoa,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 4,
@@ -259,8 +266,8 @@ class _PauseDialog extends StatelessWidget {
                 key: const ValueKey('btn_pause_resume'),
                 onPressed: onResume,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AdinkraTheme.primaryGold,
-                  foregroundColor: AdinkraTheme.richBlack,
+                  backgroundColor: AdinkraTheme.terracotta,
+                  foregroundColor: AdinkraTheme.lightCream,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
@@ -284,8 +291,8 @@ class _PauseDialog extends StatelessWidget {
                 key: const ValueKey('btn_pause_quit'),
                 onPressed: onQuit,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white60,
-                  side: const BorderSide(color: Colors.white24),
+                  foregroundColor: AdinkraTheme.cocoa,
+                  side: const BorderSide(color: AdinkraTheme.cocoa),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),

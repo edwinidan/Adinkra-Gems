@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
 import '../../app/theme.dart';
+import '../../app/woven_background.dart';
 import '../../services/progress_service.dart';
 import 'level_node_widget.dart';
 
@@ -54,11 +55,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
 
   void _onLevelTap(int level) async {
     // Navigate to game screen and wait for return
-    await Navigator.pushNamed(
-      context,
-      AppRoutes.game,
-      arguments: level,
-    );
+    await Navigator.pushNamed(context, AppRoutes.game, arguments: level);
 
     // Refresh progress state when returning to this screen
     _loadProgress();
@@ -67,18 +64,8 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AdinkraTheme.richBlack,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A0035),
-              AdinkraTheme.richBlack,
-            ],
-          ),
-        ),
+      backgroundColor: AdinkraTheme.cream,
+      body: WovenBackground(
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -93,7 +80,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(
                         Icons.arrow_back_ios_rounded,
-                        color: AdinkraTheme.primaryGold,
+                        color: AdinkraTheme.darkCocoa,
                       ),
                     ),
                     const Expanded(
@@ -101,7 +88,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                         'SELECT LEVEL',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: AdinkraTheme.primaryGold,
+                          color: AdinkraTheme.darkCocoa,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 4,
@@ -119,7 +106,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                 child: Text(
                   'Journey through the Adinkra realm',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white30, fontSize: 12),
+                  style: TextStyle(color: AdinkraTheme.cocoa, fontSize: 12),
                 ),
               ),
 
@@ -133,15 +120,16 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                       )
                     : GridView.builder(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 8,
+                          horizontal: 24,
+                          vertical: 8,
                         ),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 20,
-                          childAspectRatio: 0.88,
-                        ),
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 20,
+                              childAspectRatio: 0.88,
+                            ),
                         itemCount: 10,
                         itemBuilder: (context, index) {
                           final level = index + 1;

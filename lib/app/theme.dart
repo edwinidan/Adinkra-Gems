@@ -1,28 +1,32 @@
 import 'package:flutter/material.dart';
 
 class AdinkraTheme {
-  // Brand colours
-  static const Color primaryGold = Color(0xFFFFD700);
-  static const Color deepPurple = Color(0xFF2D0057);
-  static const Color richBlack = Color(0xFF0A0010);
-  static const Color accentTeal = Color(0xFF00E5CC);
+  static const Color primaryGold = Color(0xFFC58A2B);
+  static const Color warmGold = Color(0xFFE2B65B);
+  static const Color cream = Color(0xFFF7E4C5);
+  static const Color lightCream = Color(0xFFFFF7E8);
+  static const Color cocoa = Color(0xFF5B3823);
+  static const Color darkCocoa = Color(0xFF2F1B12);
+  static const Color terracotta = Color(0xFFA85132);
+  static const Color sage = Color(0xFF667A45);
 
   static ThemeData get theme => ThemeData(
-        useMaterial3: true,
-        colorScheme: const ColorScheme.dark(
-          primary: primaryGold,
-          secondary: accentTeal,
-          surface: richBlack,
-        ),
-        scaffoldBackgroundColor: richBlack,
-        fontFamily: 'Roboto',
-        textTheme: const TextTheme(
-          displayLarge: TextStyle(
-            color: primaryGold,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-          bodyMedium: TextStyle(color: Colors.white70),
-        ),
-      );
+    useMaterial3: true,
+    colorScheme: const ColorScheme.light(
+      primary: primaryGold,
+      secondary: terracotta,
+      surface: lightCream,
+      onSurface: darkCocoa,
+    ),
+    scaffoldBackgroundColor: cream,
+    fontFamily: 'Roboto',
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(
+        color: darkCocoa,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+      ),
+      bodyMedium: TextStyle(color: cocoa),
+    ),
+  );
 }

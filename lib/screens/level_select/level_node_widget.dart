@@ -71,10 +71,7 @@ class _LevelNodeWidgetState extends State<LevelNodeWidget>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      child: ScaleTransition(
-        scale: _scaleAnim,
-        child: _buildTile(),
-      ),
+      child: ScaleTransition(scale: _scaleAnim, child: _buildTile()),
     );
   }
 
@@ -85,33 +82,33 @@ class _LevelNodeWidgetState extends State<LevelNodeWidget>
         gradient: widget.isUnlocked
             ? const LinearGradient(
                 colors: [
-                  Color(0xFFFFE066),
-                  AdinkraTheme.primaryGold,
-                  Color(0xFFCC8800),
+                  AdinkraTheme.lightCream,
+                  AdinkraTheme.warmGold,
+                  AdinkraTheme.terracotta,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.06),
-                  Colors.white.withOpacity(0.02),
+                  AdinkraTheme.cocoa.withOpacity(0.12),
+                  AdinkraTheme.cocoa.withOpacity(0.06),
                 ],
               ),
         border: Border.all(
           color: widget.isUnlocked
-              ? const Color(0xFFFFE066)
-              : Colors.white10,
+              ? AdinkraTheme.cocoa
+              : AdinkraTheme.cocoa.withOpacity(0.18),
           width: widget.isUnlocked ? 2 : 1,
         ),
         boxShadow: widget.isUnlocked
             ? [
                 BoxShadow(
-                  color: AdinkraTheme.primaryGold.withOpacity(0.45),
+                  color: AdinkraTheme.cocoa.withOpacity(0.25),
                   blurRadius: 16,
                   spreadRadius: 1,
                   offset: const Offset(0, 4),
-                )
+                ),
               ]
             : [],
       ),
@@ -122,8 +119,8 @@ class _LevelNodeWidgetState extends State<LevelNodeWidget>
           Icon(
             widget.isUnlocked ? Icons.diamond_rounded : Icons.lock_rounded,
             color: widget.isUnlocked
-                ? AdinkraTheme.richBlack
-                : Colors.white24,
+                ? AdinkraTheme.darkCocoa
+                : AdinkraTheme.cocoa.withOpacity(0.35),
             size: 26,
           ),
           const SizedBox(height: 4),
@@ -133,8 +130,8 @@ class _LevelNodeWidgetState extends State<LevelNodeWidget>
             '${widget.level}',
             style: TextStyle(
               color: widget.isUnlocked
-                  ? AdinkraTheme.richBlack
-                  : Colors.white24,
+                  ? AdinkraTheme.darkCocoa
+                  : AdinkraTheme.cocoa.withOpacity(0.35),
               fontWeight: FontWeight.w900,
               fontSize: 18,
             ),
@@ -145,17 +142,14 @@ class _LevelNodeWidgetState extends State<LevelNodeWidget>
             const SizedBox(height: 2),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                3,
-                (i) {
-                  final filled = i < widget.stars;
-                  return Icon(
-                    filled ? Icons.star_rounded : Icons.star_border_rounded,
-                    size: 11,
-                    color: AdinkraTheme.richBlack,
-                  );
-                },
-              ),
+              children: List.generate(3, (i) {
+                final filled = i < widget.stars;
+                return Icon(
+                  filled ? Icons.star_rounded : Icons.star_border_rounded,
+                  size: 11,
+                  color: AdinkraTheme.darkCocoa,
+                );
+              }),
             ),
           ],
 
@@ -165,7 +159,7 @@ class _LevelNodeWidgetState extends State<LevelNodeWidget>
             Text(
               '${widget.bestScore}',
               style: const TextStyle(
-                color: AdinkraTheme.richBlack,
+                color: AdinkraTheme.darkCocoa,
                 fontSize: 9,
                 fontWeight: FontWeight.w800,
               ),

@@ -33,15 +33,15 @@ class GameOverDialog extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E0738),
+          color: AdinkraTheme.lightCream,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: AdinkraTheme.primaryGold.withOpacity(0.4),
+            color: AdinkraTheme.cocoa.withOpacity(0.4),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: AdinkraTheme.deepPurple.withOpacity(0.6),
+              color: AdinkraTheme.cocoa.withOpacity(0.3),
               blurRadius: 36,
               spreadRadius: 4,
             ),
@@ -52,15 +52,17 @@ class GameOverDialog extends StatelessWidget {
           children: [
             // ── Title Header ──
             Icon(
-              isWon ? Icons.emoji_events_rounded : Icons.sentiment_very_dissatisfied_rounded,
-              color: isWon ? AdinkraTheme.primaryGold : Colors.redAccent,
+              isWon
+                  ? Icons.emoji_events_rounded
+                  : Icons.sentiment_very_dissatisfied_rounded,
+              color: isWon ? AdinkraTheme.terracotta : Colors.redAccent,
               size: 64,
             ),
             const SizedBox(height: 12),
             Text(
               isWon ? 'LEVEL CLEARED!' : 'LEVEL FAILED',
               style: TextStyle(
-                color: isWon ? AdinkraTheme.primaryGold : Colors.redAccent,
+                color: isWon ? AdinkraTheme.darkCocoa : Colors.redAccent,
                 fontSize: 26,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 3,
@@ -70,7 +72,7 @@ class GameOverDialog extends StatelessWidget {
             Text(
               isWon ? 'Victory is Yours!' : 'Try again, you can do it!',
               style: const TextStyle(
-                color: Colors.white38,
+                color: AdinkraTheme.cocoa,
                 fontSize: 13,
                 letterSpacing: 1.5,
               ),
@@ -87,7 +89,9 @@ class GameOverDialog extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 6),
                     child: Icon(
                       Icons.star_rounded,
-                      color: filled ? AdinkraTheme.primaryGold : Colors.white12,
+                      color: filled
+                          ? AdinkraTheme.primaryGold
+                          : AdinkraTheme.cocoa.withOpacity(0.15),
                       size: index == 1 ? 52 : 40, // Middle star is larger
                     ),
                   );
@@ -100,10 +104,10 @@ class GameOverDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.04),
+                color: AdinkraTheme.cream,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.08),
+                  color: AdinkraTheme.cocoa.withOpacity(0.18),
                   width: 1,
                 ),
               ),
@@ -112,7 +116,7 @@ class GameOverDialog extends StatelessWidget {
                   const Text(
                     'FINAL SCORE',
                     style: TextStyle(
-                      color: Colors.white30,
+                      color: AdinkraTheme.cocoa,
                       fontSize: 10,
                       letterSpacing: 2,
                       fontWeight: FontWeight.bold,
@@ -122,7 +126,7 @@ class GameOverDialog extends StatelessWidget {
                   Text(
                     '$score',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AdinkraTheme.darkCocoa,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -141,8 +145,8 @@ class GameOverDialog extends StatelessWidget {
                   key: const ValueKey('btn_win_next'),
                   onPressed: onNextLevel,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AdinkraTheme.primaryGold,
-                    foregroundColor: AdinkraTheme.richBlack,
+                    backgroundColor: AdinkraTheme.terracotta,
+                    foregroundColor: AdinkraTheme.lightCream,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -170,8 +174,8 @@ class GameOverDialog extends StatelessWidget {
                   key: const ValueKey('btn_lose_retry'),
                   onPressed: onRetry,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AdinkraTheme.primaryGold,
-                    foregroundColor: AdinkraTheme.richBlack,
+                    backgroundColor: AdinkraTheme.terracotta,
+                    foregroundColor: AdinkraTheme.lightCream,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -200,8 +204,8 @@ class GameOverDialog extends StatelessWidget {
                     key: const ValueKey('btn_gameover_map'),
                     onPressed: onMap,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      foregroundColor: AdinkraTheme.cocoa,
+                      side: const BorderSide(color: AdinkraTheme.cocoa),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -226,8 +230,8 @@ class GameOverDialog extends StatelessWidget {
                       key: const ValueKey('btn_win_retry'),
                       onPressed: onRetry,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white70,
-                        side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                        foregroundColor: AdinkraTheme.cocoa,
+                        side: const BorderSide(color: AdinkraTheme.cocoa),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),

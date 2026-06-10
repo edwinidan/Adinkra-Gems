@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
 import '../../app/theme.dart';
+import '../../app/woven_background.dart';
 
 /// Splash screen — shown on app launch.
 ///
@@ -32,9 +33,10 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
-    _logoScale = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _logoCtrl, curve: Curves.elasticOut),
-    );
+    _logoScale = Tween<double>(
+      begin: 0.6,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _logoCtrl, curve: Curves.elasticOut));
     _logoFade = CurvedAnimation(parent: _logoCtrl, curve: Curves.easeIn);
 
     // Text animation (delayed)
@@ -71,18 +73,8 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AdinkraTheme.richBlack,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.center,
-            radius: 0.8,
-            colors: [
-              Color(0xFF2D0057),
-              AdinkraTheme.richBlack,
-            ],
-          ),
-        ),
+      backgroundColor: AdinkraTheme.cream,
+      body: WovenBackground(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -90,10 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
               // ── Gem logo ──
               FadeTransition(
                 opacity: _logoFade,
-                child: ScaleTransition(
-                  scale: _logoScale,
-                  child: _SplashGem(),
-                ),
+                child: ScaleTransition(scale: _logoScale, child: _SplashGem()),
               ),
 
               const SizedBox(height: 32),
@@ -108,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
                       const Text(
                         'ADINKRA GEMS',
                         style: TextStyle(
-                          color: AdinkraTheme.primaryGold,
+                          color: AdinkraTheme.darkCocoa,
                           fontSize: 26,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 5,
@@ -118,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen>
                       const Text(
                         'Match the Sacred Symbols',
                         style: TextStyle(
-                          color: Colors.white38,
+                          color: AdinkraTheme.cocoa,
                           fontSize: 13,
                           letterSpacing: 1,
                         ),
@@ -152,9 +141,10 @@ class _SplashGemState extends State<_SplashGem>
       vsync: this,
       duration: const Duration(milliseconds: 1600),
     )..repeat(reverse: true);
-    _glow = Tween<double>(begin: 18.0, end: 38.0).animate(
-      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
-    );
+    _glow = Tween<double>(
+      begin: 18.0,
+      end: 38.0,
+    ).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -174,15 +164,15 @@ class _SplashGemState extends State<_SplashGem>
           shape: BoxShape.circle,
           gradient: const RadialGradient(
             colors: [
-              Color(0xFFFFE566),
-              AdinkraTheme.primaryGold,
-              AdinkraTheme.deepPurple,
+              AdinkraTheme.lightCream,
+              AdinkraTheme.warmGold,
+              AdinkraTheme.terracotta,
             ],
             stops: [0.0, 0.45, 1.0],
           ),
           boxShadow: [
             BoxShadow(
-              color: AdinkraTheme.primaryGold.withOpacity(0.6),
+              color: AdinkraTheme.cocoa.withOpacity(0.3),
               blurRadius: _glow.value,
               spreadRadius: _glow.value * 0.25,
             ),
@@ -191,7 +181,7 @@ class _SplashGemState extends State<_SplashGem>
         child: const Icon(
           Icons.diamond_rounded,
           size: 64,
-          color: Colors.white,
+          color: AdinkraTheme.darkCocoa,
         ),
       ),
     );

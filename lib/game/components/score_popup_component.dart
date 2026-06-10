@@ -7,8 +7,8 @@ class ScorePopupComponent extends TextComponent {
   final double duration;
   double _time = 0.0;
 
-  static const Color baseColor = Color(0xFFFFD700); // Vibrant Gold
-  static const Color shadowColor = Color(0xFF1E0C36); // Deep purple shadows for premium contrast
+  static const Color baseColor = Color(0xFFE2B65B);
+  static const Color shadowColor = Color(0xFF2F1B12);
 
   ScorePopupComponent({
     required String text,

@@ -665,15 +665,15 @@ class BoardComponent extends PositionComponent
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
     final bgRRect = RRect.fromRectAndRadius(rect, const Radius.circular(20));
 
-    // Semi-transparent deep purple glass fill
+    // Dark cocoa keeps the colorful gems readable against the woven UI.
     final bgPaint = Paint()
-      ..color = const Color(0xFF1E0C36).withOpacity(0.65)
+      ..color = const Color(0xFF3A2418).withOpacity(0.9)
       ..style = PaintingStyle.fill;
     canvas.drawRRect(bgRRect, bgPaint);
 
     // Subtle gold border
     final borderPaint = Paint()
-      ..color = const Color(0xFFFFD700).withOpacity(0.25)
+      ..color = const Color(0xFFE2B65B).withOpacity(0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     canvas.drawRRect(bgRRect, borderPaint);
@@ -684,7 +684,7 @@ class BoardComponent extends PositionComponent
       ..style = PaintingStyle.fill;
 
     final cellBorderPaint = Paint()
-      ..color = const Color(0xFFFFD700).withOpacity(0.05)
+      ..color = const Color(0xFFE2B65B).withOpacity(0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

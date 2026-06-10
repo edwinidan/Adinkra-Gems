@@ -23,10 +23,10 @@ class GameHud extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AdinkraTheme.deepPurple.withOpacity(0.85),
+        color: AdinkraTheme.lightCream.withOpacity(0.92),
         border: Border(
           bottom: BorderSide(
-            color: AdinkraTheme.primaryGold.withOpacity(0.25),
+            color: AdinkraTheme.cocoa.withOpacity(0.25),
             width: 1,
           ),
         ),
@@ -43,7 +43,7 @@ class GameHud extends StatelessWidget {
                 onPressed: onPause,
                 icon: const Icon(
                   Icons.pause_circle_outline_rounded,
-                  color: AdinkraTheme.primaryGold,
+                  color: AdinkraTheme.terracotta,
                   size: 30,
                 ),
                 padding: EdgeInsets.zero,
@@ -60,7 +60,7 @@ class GameHud extends StatelessWidget {
                   Text(
                     'LEVEL ${config.levelNumber}',
                     style: const TextStyle(
-                      color: AdinkraTheme.primaryGold,
+                      color: AdinkraTheme.darkCocoa,
                       fontSize: 12,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2,
@@ -69,7 +69,7 @@ class GameHud extends StatelessWidget {
                   Text(
                     config.name,
                     style: const TextStyle(
-                      color: Colors.white54,
+                      color: AdinkraTheme.cocoa,
                       fontSize: 10,
                       fontWeight: FontWeight.normal,
                     ),
@@ -83,7 +83,7 @@ class GameHud extends StatelessWidget {
               _HudStat(
                 label: 'SCORE',
                 value: '${levelController.currentScore}',
-                valueColor: Colors.white,
+                valueColor: AdinkraTheme.darkCocoa,
               ),
 
               const SizedBox(width: 16),
@@ -95,7 +95,7 @@ class GameHud extends StatelessWidget {
                   value: '${levelController.movesRemaining}',
                   valueColor: levelController.movesRemaining <= 5
                       ? Colors.redAccent
-                      : AdinkraTheme.primaryGold,
+                      : AdinkraTheme.terracotta,
                 ),
                 const SizedBox(width: 16),
               ],
@@ -107,7 +107,7 @@ class GameHud extends StatelessWidget {
                   value: '${levelController.timeRemainingSeconds}s',
                   valueColor: levelController.timeRemainingSeconds <= 15
                       ? Colors.redAccent
-                      : Colors.cyanAccent,
+                      : AdinkraTheme.sage,
                 ),
             ],
           ),
@@ -120,15 +120,13 @@ class GameHud extends StatelessWidget {
               const Text(
                 'GOALS: ',
                 style: TextStyle(
-                  color: Colors.white38,
+                  color: AdinkraTheme.cocoa,
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.5,
                 ),
               ),
-              Expanded(
-                child: _ObjectivesBar(levelController: levelController),
-              ),
+              Expanded(child: _ObjectivesBar(levelController: levelController)),
             ],
           ),
         ],
@@ -157,7 +155,7 @@ class _HudStat extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white38,
+            color: AdinkraTheme.cocoa,
             fontSize: 9,
             letterSpacing: 1.5,
             fontWeight: FontWeight.bold,
@@ -207,11 +205,8 @@ class _ObjectivesBar extends StatelessWidget {
               GemAssets.pathFor(objective.gemType),
               width: 18,
               height: 18,
-              errorBuilder: (_, __, ___) => const Icon(
-                Icons.broken_image,
-                color: Colors.red,
-                size: 18,
-              ),
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.broken_image, color: Colors.red, size: 18),
             ),
             label: '$collected / ${objective.count}',
           ),
@@ -223,10 +218,12 @@ class _ObjectivesBar extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: chips
-            .map((w) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: w,
-                ))
+            .map(
+              (w) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: w,
+              ),
+            )
             .toList(),
       ),
     );
@@ -244,10 +241,10 @@ class _ObjectiveChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
+        color: AdinkraTheme.cream.withOpacity(0.85),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.white.withOpacity(0.12),
+          color: AdinkraTheme.cocoa.withOpacity(0.2),
           width: 0.8,
         ),
       ),
@@ -259,7 +256,7 @@ class _ObjectiveChip extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: Colors.white70,
+              color: AdinkraTheme.darkCocoa,
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),

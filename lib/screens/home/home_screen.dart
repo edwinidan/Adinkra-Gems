@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/routes.dart';
 import '../../app/theme.dart';
+import '../../app/woven_background.dart';
 
 /// Home screen — entry point after the splash.
 ///
@@ -53,18 +54,8 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AdinkraTheme.richBlack,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A0035), AdinkraTheme.richBlack],
-            stops: [0.0, 0.75],
-          ),
-        ),
+      backgroundColor: AdinkraTheme.cream,
+      body: WovenBackground(
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnim,
@@ -89,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen>
                       'ADINKRA',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AdinkraTheme.primaryGold,
+                        color: AdinkraTheme.darkCocoa,
                         fontSize: 44,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 7,
@@ -99,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen>
                       'GEMS',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AdinkraTheme.terracotta,
                         fontSize: 38,
                         fontWeight: FontWeight.w200,
                         letterSpacing: 14,
@@ -109,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen>
                     const Text(
                       'Match the Sacred Symbols',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white38, fontSize: 13),
+                      style: TextStyle(color: AdinkraTheme.cocoa, fontSize: 13),
                     ),
 
                     const Spacer(flex: 2),
@@ -147,7 +138,10 @@ class _HomeScreenState extends State<HomeScreen>
                       child: Text(
                         'Inspired by Ghanaian Adinkra symbols',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white24, fontSize: 11),
+                        style: TextStyle(
+                          color: AdinkraTheme.cocoa,
+                          fontSize: 11,
+                        ),
                       ),
                     ),
                   ],
@@ -181,9 +175,10 @@ class _GemLogoState extends State<_GemLogo>
       vsync: this,
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
-    _glow = Tween<double>(begin: 20, end: 40).animate(
-      CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
-    );
+    _glow = Tween<double>(
+      begin: 20,
+      end: 40,
+    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
   }
 
   @override
@@ -203,15 +198,15 @@ class _GemLogoState extends State<_GemLogo>
           shape: BoxShape.circle,
           gradient: const RadialGradient(
             colors: [
-              Color(0xFFFFE066),
-              AdinkraTheme.primaryGold,
-              AdinkraTheme.deepPurple,
+              AdinkraTheme.lightCream,
+              AdinkraTheme.warmGold,
+              AdinkraTheme.terracotta,
             ],
             stops: [0.0, 0.5, 1.0],
           ),
           boxShadow: [
             BoxShadow(
-              color: AdinkraTheme.primaryGold.withOpacity(0.55),
+              color: AdinkraTheme.cocoa.withOpacity(0.3),
               blurRadius: _glow.value,
               spreadRadius: _glow.value * 0.3,
             ),
@@ -220,7 +215,7 @@ class _GemLogoState extends State<_GemLogo>
         child: const Icon(
           Icons.diamond_rounded,
           size: 60,
-          color: Colors.white,
+          color: AdinkraTheme.darkCocoa,
         ),
       ),
     );
@@ -263,19 +258,20 @@ class _HomeButton extends StatelessWidget {
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              isPrimary ? AdinkraTheme.primaryGold : Colors.transparent,
-          foregroundColor:
-              isPrimary ? AdinkraTheme.richBlack : AdinkraTheme.primaryGold,
+          backgroundColor: isPrimary
+              ? AdinkraTheme.terracotta
+              : AdinkraTheme.lightCream,
+          foregroundColor: isPrimary
+              ? AdinkraTheme.lightCream
+              : AdinkraTheme.darkCocoa,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
             side: isPrimary
                 ? BorderSide.none
-                : const BorderSide(
-                    color: AdinkraTheme.primaryGold, width: 1.5),
+                : const BorderSide(color: AdinkraTheme.cocoa, width: 1.5),
           ),
           elevation: isPrimary ? 10 : 0,
-          shadowColor: AdinkraTheme.primaryGold.withOpacity(0.5),
+          shadowColor: AdinkraTheme.cocoa.withOpacity(0.35),
         ),
       ),
     );
@@ -298,10 +294,10 @@ class _AboutSheet extends StatelessWidget {
       builder: (_, scrollCtrl) => Container(
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A0035),
+          color: AdinkraTheme.lightCream,
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: AdinkraTheme.primaryGold.withOpacity(0.3),
+            color: AdinkraTheme.cocoa.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -317,19 +313,22 @@ class _AboutSheet extends StatelessWidget {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 24),
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: AdinkraTheme.cocoa.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
 
-              const Icon(Icons.diamond_rounded,
-                  color: AdinkraTheme.primaryGold, size: 36),
+              const Icon(
+                Icons.diamond_rounded,
+                color: AdinkraTheme.terracotta,
+                size: 36,
+              ),
               const SizedBox(height: 14),
 
               const Text(
                 'ADINKRA GEMS',
                 style: TextStyle(
-                  color: AdinkraTheme.primaryGold,
+                  color: AdinkraTheme.darkCocoa,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 3,
@@ -344,7 +343,7 @@ class _AboutSheet extends StatelessWidget {
                 'love, and unity. Match them to unlock their power.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.white60,
+                  color: AdinkraTheme.cocoa,
                   fontSize: 13,
                   height: 1.6,
                 ),
@@ -375,7 +374,7 @@ class _AboutSheet extends StatelessWidget {
               _SymbolRow(
                 symbol: 'Nsoromma',
                 meaning: 'Child of the heavens',
-                color: Colors.white70,
+                color: AdinkraTheme.cocoa,
               ),
               _SymbolRow(
                 symbol: 'Funtumfunefu',
@@ -412,10 +411,7 @@ class _SymbolRow extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
           const SizedBox(width: 10),
           Text(
@@ -430,7 +426,7 @@ class _SymbolRow extends StatelessWidget {
           Expanded(
             child: Text(
               '— $meaning',
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
+              style: const TextStyle(color: AdinkraTheme.cocoa, fontSize: 12),
               overflow: TextOverflow.ellipsis,
             ),
           ),

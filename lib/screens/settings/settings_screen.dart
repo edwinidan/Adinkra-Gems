@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../app/woven_background.dart';
 import '../../services/settings_service.dart';
 
 /// Settings screen — toggles persistent sound and music settings.
@@ -18,32 +19,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AdinkraTheme.richBlack,
+      backgroundColor: AdinkraTheme.cream,
       appBar: AppBar(
-        backgroundColor: AdinkraTheme.deepPurple,
+        backgroundColor: AdinkraTheme.cream,
         title: const Text(
           'Settings',
-          style:
-              TextStyle(color: AdinkraTheme.primaryGold, letterSpacing: 2),
+          style: TextStyle(color: AdinkraTheme.darkCocoa, letterSpacing: 2),
         ),
-        iconTheme: const IconThemeData(color: AdinkraTheme.primaryGold),
+        iconTheme: const IconThemeData(color: AdinkraTheme.darkCocoa),
         elevation: 0,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AdinkraTheme.deepPurple, AdinkraTheme.richBlack],
-          ),
-        ),
+      body: WovenBackground(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             const Text(
               'Audio',
               style: TextStyle(
-                color: AdinkraTheme.primaryGold,
+                color: AdinkraTheme.terracotta,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
@@ -74,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 32),
             const Text(
               'Note: Settings are saved automatically.',
-              style: TextStyle(color: Colors.white24, fontSize: 11),
+              style: TextStyle(color: AdinkraTheme.cocoa, fontSize: 11),
               textAlign: TextAlign.center,
             ),
           ],
@@ -105,24 +98,27 @@ class _SettingsTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: Colors.white12),
+        color: AdinkraTheme.lightCream.withOpacity(0.88),
+        border: Border.all(color: AdinkraTheme.cocoa.withOpacity(0.2)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AdinkraTheme.primaryGold, size: 22),
+          Icon(icon, color: AdinkraTheme.terracotta, size: 22),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white70, fontSize: 15),
+              style: const TextStyle(
+                color: AdinkraTheme.darkCocoa,
+                fontSize: 15,
+              ),
             ),
           ),
           Switch(
             key: ValueKey(id),
             value: value,
             onChanged: onChanged,
-            activeColor: AdinkraTheme.primaryGold,
+            activeColor: AdinkraTheme.terracotta,
           ),
         ],
       ),
