@@ -61,7 +61,7 @@ class ProgressService {
   }
 
   /// Clears all stored level progress and scores (reverts to Level 1 unlocked).
-  static Future<void> clearAllProgress({int levelCount = 30}) async {
+  static Future<void> clearAllProgress({int levelCount = 15}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_unlockedKey);
     for (int i = 1; i <= levelCount; i++) {

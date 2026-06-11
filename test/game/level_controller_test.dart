@@ -4,8 +4,12 @@ import 'package:adinkra_gems/game/models/level_objective.dart';
 import 'package:adinkra_gems/game/models/star_thresholds.dart';
 import 'package:adinkra_gems/game/systems/level_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+
   group('LevelController', () {
     const starThresholds = StarThresholds(
       oneStar: 100,

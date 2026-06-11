@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import '../../services/balancing_service.dart';
+import '../models/combo_type.dart';
 import '../models/gem_type.dart';
 import '../models/level_config.dart';
 import '../models/level_objective.dart';
@@ -27,6 +29,11 @@ class LevelController extends ChangeNotifier {
   final Map<GemType, int> _collectedGems = {};
   LevelPlayState _state = LevelPlayState.ready;
   LevelPlayState _stateBeforePause = LevelPlayState.ready;
+
+  // Balancing metrics tracking
+  final DateTime _startTime = DateTime.now();
+  int _reshuffleCount = 0;
+  int _maxCascadeChain = 0;
 
   LevelController({required this.config}) {
     _movesRemaining = config.moveLimit ?? 0;
@@ -165,6 +172,40 @@ class LevelController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Registers a special combination activation.
+  void recordCombo(ComboType comboType) {
+    if (isGameOver) return;
+    switch (comboType) {
+      case ComboType.lineLine:
+        _currentScore += 500;
+        break;
+      case ComboType.lineBurst:
+        _currentScore += 1000;
+        break;
+      case ComboType.burstBurst:
+        _currentScore += 1500;
+        break;
+      case ComboType.unityNormal:
+        _currentScore += 500;
+        break;
+    }
+    notifyListeners();
+  }
+
+  /// Records a reshuffle event.
+  void recordReshuffle() {
+    if (isGameOver) return;
+    _reshuffleCount++;
+  }
+
+  /// Records the maximum cascade chain reached during a move.
+  void recordCascadeChain(int length) {
+    if (isGameOver) return;
+    if (length > _maxCascadeChain) {
+      _maxCascadeChain = length;
+    }
+  }
+
   /// Returns true if all objectives configured for this level are completed.
   bool get areObjectivesMet {
     for (final objective in config.objectives) {
@@ -186,19 +227,65 @@ class LevelController extends ChangeNotifier {
   void _evaluateStableBoard() {
     if (areObjectivesMet) {
       _state = LevelPlayState.won;
+      _reportBalancingData(true);
       return;
     }
 
     if (hasMoveLimit && _movesRemaining <= 0) {
       _state = LevelPlayState.lost;
+      _reportBalancingData(false);
       return;
     }
 
     if (hasTimer && _timeRemainingSeconds <= 0) {
       _state = LevelPlayState.lost;
+      _reportBalancingData(false);
       return;
     }
 
     _state = LevelPlayState.ready;
+  }
+
+  double _calculateApproximateProgress() {
+    if (config.objectives.isEmpty) return 0.0;
+    
+    double totalProgress = 0.0;
+    for (final objective in config.objectives) {
+      if (objective is ScoreObjective) {
+        totalProgress += (_currentScore / objective.targetScore).clamp(0.0, 1.0);
+      } else if (objective is CollectObjective) {
+        final collected = _collectedGems[objective.gemType] ?? 0;
+        totalProgress += (collected / objective.count).clamp(0.0, 1.0);
+      } else if (objective is ClearMarkObjective) {
+        if (_totalMarks == 0) {
+          totalProgress += 1.0;
+        } else {
+          final cleared = _totalMarks - _marksRemaining;
+          totalProgress += (cleared / _totalMarks).clamp(0.0, 1.0);
+        }
+      } else if (objective is ClearBlockerObjective) {
+        if (_totalPots == 0) {
+          totalProgress += 1.0;
+        } else {
+          final cleared = _totalPots - _potsRemaining;
+          totalProgress += (cleared / _totalPots).clamp(0.0, 1.0);
+        }
+      }
+    }
+    return totalProgress / config.objectives.length;
+  }
+
+  void _reportBalancingData(bool isWin) {
+    final timeSpent = DateTime.now().difference(_startTime).inSeconds;
+    BalancingService.recordAttempt(
+      level: config.levelNumber,
+      isWin: isWin,
+      movesRemaining: _movesRemaining,
+      score: _currentScore,
+      completionTimeSeconds: timeSpent,
+      reshuffleCount: _reshuffleCount,
+      maxCascadeChain: _maxCascadeChain,
+      approximateGoalProgress: isWin ? 1.0 : _calculateApproximateProgress(),
+    );
   }
 }

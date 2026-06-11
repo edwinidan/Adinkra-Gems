@@ -10,6 +10,7 @@ import '../../game/board/cascade_resolver.dart';
 import '../../game/board/grid_position.dart';
 import '../../game/board/move_validator.dart';
 import '../../game/board/reshuffle_service.dart';
+import '../../game/models/combo_type.dart';
 import '../../game/models/gem_type.dart';
 import '../../game/models/special_gem_type.dart';
 import '../../services/audio_service.dart';
@@ -362,6 +363,7 @@ class BoardComponent extends PositionComponent
       multiplier = 2.5;
     }
     _cascadeIndex++;
+    gameRef.levelController.recordCascadeChain(_cascadeIndex);
 
     // A. Play audio feedback: playSpecialClear if any cleared tile was special, else playMatch
     bool hasSpecialClear = step.specialClears.isNotEmpty;
@@ -396,7 +398,34 @@ class BoardComponent extends PositionComponent
       );
     }
 
-    if (hasSpecialClear || hasSpecialMatch) {
+    if (step.triggeredCombo != null) {
+      gameRef.levelController.recordCombo(step.triggeredCombo!);
+      AudioService.playSpecialClear();
+      EffectsManager.triggerBoardShake(this);
+
+      final wPos = Vector2(
+        step.comboPosition!.col * tileSize + tileSize / 2,
+        step.comboPosition!.row * tileSize + tileSize / 2,
+      );
+
+      switch (step.triggeredCombo!) {
+        case ComboType.lineLine:
+          EffectsManager.spawnHorizontalBlast(this, wPos.y, size.x);
+          EffectsManager.spawnVerticalBlast(this, wPos.x, size.y);
+          break;
+        case ComboType.lineBurst:
+          EffectsManager.spawnHorizontalBlast(this, wPos.y, size.x);
+          EffectsManager.spawnVerticalBlast(this, wPos.x, size.y);
+          EffectsManager.spawnBombBlast(this, wPos, tileSize);
+          break;
+        case ComboType.burstBurst:
+          EffectsManager.spawnBombBlast(this, wPos, tileSize * 2.0); // Big explosion
+          break;
+        case ComboType.unityNormal:
+          EffectsManager.spawnColorClearPulse(this, wPos, tileSize);
+          break;
+      }
+    } else if (hasSpecialClear || hasSpecialMatch) {
       AudioService.playSpecialClear();
     } else if (step.matches.isNotEmpty) {
       AudioService.playMatch();
@@ -679,6 +708,7 @@ class BoardComponent extends PositionComponent
   void _triggerReshuffle() {
     _inputLocked = true;
     AudioService.playSwap();
+    gameRef.levelController.recordReshuffle();
 
     final boardCenter = Vector2(size.x / 2, size.y / 2);
     int activeAnimations = 0;

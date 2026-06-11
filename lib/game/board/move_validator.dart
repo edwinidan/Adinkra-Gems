@@ -37,9 +37,14 @@ class MoveValidator {
     final tileB = board.get(b);
     if (tileA == null || tileB == null) return false;
 
-    // Swapping a colorClear gem with any tile is always valid
+    // Swapping a colorClear gem with any tile is always valid (Unity + Normal combo)
     if (tileA.specialType == SpecialGemType.colorClear ||
         tileB.specialType == SpecialGemType.colorClear) {
+      return true;
+    }
+
+    // Swapping any two special gems is always a valid combo
+    if (tileA.isSpecial && tileB.isSpecial) {
       return true;
     }
 

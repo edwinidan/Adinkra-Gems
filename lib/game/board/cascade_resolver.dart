@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../models/combo_type.dart';
 import '../models/gem_type.dart';
 import '../models/match_group.dart';
 import '../models/special_gem_type.dart';
@@ -77,6 +78,12 @@ class CascadeStep {
   /// List of pots that took damage.
   final List<PotDamageInfo> potDamages;
 
+  /// The type of combo triggered during this step, if any.
+  final ComboType? triggeredCombo;
+
+  /// The position where the combo was triggered.
+  final GridPosition? comboPosition;
+
   const CascadeStep({
     required this.matches,
     required this.falls,
@@ -85,6 +92,8 @@ class CascadeStep {
     this.createdSpecials = const {},
     this.clearedMarks = const [],
     this.potDamages = const [],
+    this.triggeredCombo,
+    this.comboPosition,
   });
 
   bool get isEmpty =>
@@ -93,7 +102,8 @@ class CascadeStep {
       spawns.isEmpty &&
       specialClears.isEmpty &&
       clearedMarks.isEmpty &&
-      potDamages.isEmpty;
+      potDamages.isEmpty &&
+      triggeredCombo == null;
 }
 
 /// Resolves matches and computes cascading gravity drops on a [BoardModel].
@@ -123,41 +133,135 @@ class CascadeResolver {
     final processingQueue = <GridPosition>[];
     final specialClearsMap = <GridPosition, TileModel>{};
 
-    // Check if colorClear swap is active
-    bool colorClearTriggered = false;
-    GridPosition? colorClearPos;
-    GemType? targetColor;
+    // Check for special combos
+    ComboType? triggeredCombo;
+    GridPosition? comboPos;
+    GemType? targetColor; // For Unity + Normal
 
     if (swapA != null && swapB != null) {
       final tileA = board.get(swapA);
       final tileB = board.get(swapB);
+      if (tileA != null && tileB != null && tileA.isSpecial && tileB.isSpecial) {
+        comboPos = swapA; // Center on swap target
+
+        // Check Unity + Normal (since normal gems are not strictly "isSpecial", 
+        // wait, Unity+Normal means one is colorClear and the other could be ANY gem.)
+      }
+      
+      // Let's refine the combo detection since colorClear + Normal is valid
       if (tileA != null && tileB != null) {
-        if (tileA.specialType == SpecialGemType.colorClear) {
-          colorClearTriggered = true;
-          colorClearPos = swapA;
-          targetColor = tileB.gemType;
-        } else if (tileB.specialType == SpecialGemType.colorClear) {
-          colorClearTriggered = true;
-          colorClearPos = swapB;
-          targetColor = tileA.gemType;
+        bool aIsCC = tileA.specialType == SpecialGemType.colorClear;
+        bool bIsCC = tileB.specialType == SpecialGemType.colorClear;
+        
+        if (aIsCC && !bIsCC) {
+           triggeredCombo = ComboType.unityNormal;
+           comboPos = swapA;
+           targetColor = tileB.gemType;
+        } else if (bIsCC && !aIsCC) {
+           triggeredCombo = ComboType.unityNormal;
+           comboPos = swapB;
+           targetColor = tileA.gemType;
+        } else if (tileA.isSpecial && tileB.isSpecial) {
+           // We have two regular specials (Line or Burst)
+           bool aIsLine = tileA.specialType == SpecialGemType.horizontalBlast || tileA.specialType == SpecialGemType.verticalBlast;
+           bool bIsLine = tileB.specialType == SpecialGemType.horizontalBlast || tileB.specialType == SpecialGemType.verticalBlast;
+           bool aIsBurst = tileA.specialType == SpecialGemType.bomb;
+           bool bIsBurst = tileB.specialType == SpecialGemType.bomb;
+           
+           if (aIsLine && bIsLine) {
+             triggeredCombo = ComboType.lineLine;
+             comboPos = swapA;
+           } else if ((aIsLine && bIsBurst) || (aIsBurst && bIsLine)) {
+             triggeredCombo = ComboType.lineBurst;
+             comboPos = swapA;
+           } else if (aIsBurst && bIsBurst) {
+             triggeredCombo = ComboType.burstBurst;
+             comboPos = swapA;
+           }
         }
       }
     }
 
     List<MatchGroup> matches = [];
 
-    if (colorClearTriggered && targetColor != null) {
-      toClear.add(colorClearPos!);
-      processingQueue.add(colorClearPos);
+    if (triggeredCombo != null) {
+      // Clear the two swapped tiles
+      toClear.add(swapA!);
+      toClear.add(swapB!);
+      processingQueue.add(swapA);
+      processingQueue.add(swapB);
+      
+      if (board.get(swapA) != null) specialClearsMap[swapA] = board.get(swapA)!;
+      if (board.get(swapB) != null) specialClearsMap[swapB] = board.get(swapB)!;
 
-      for (int r = 0; r < board.rowCount; r++) {
-        for (int c = 0; c < board.colCount; c++) {
-          final pos = GridPosition(r, c);
-          final tile = board.get(pos);
-          if (tile != null && tile.gemType == targetColor) {
+      if (triggeredCombo == ComboType.unityNormal && targetColor != null) {
+        for (int r = 0; r < board.rowCount; r++) {
+          for (int c = 0; c < board.colCount; c++) {
+            final pos = GridPosition(r, c);
+            final tile = board.get(pos);
+            if (tile != null && tile.gemType == targetColor && pos != swapA && pos != swapB) {
+              toClear.add(pos);
+              processingQueue.add(pos);
+              specialClearsMap[pos] = tile;
+            }
+          }
+        }
+      } else if (triggeredCombo == ComboType.lineLine) {
+        // Clear row and col of comboPos
+        for (int r = 0; r < board.rowCount; r++) {
+          final pos = GridPosition(r, comboPos!.col);
+          if (board.get(pos) != null) {
             toClear.add(pos);
             processingQueue.add(pos);
-            specialClearsMap[pos] = tile;
+            specialClearsMap[pos] = board.get(pos)!;
+          }
+        }
+        for (int c = 0; c < board.colCount; c++) {
+          final pos = GridPosition(comboPos!.row, c);
+          if (board.get(pos) != null) {
+            toClear.add(pos);
+            processingQueue.add(pos);
+            specialClearsMap[pos] = board.get(pos)!;
+          }
+        }
+      } else if (triggeredCombo == ComboType.lineBurst) {
+        // Clear 3 rows and 3 cols
+        for (int rowOffset = -1; rowOffset <= 1; rowOffset++) {
+          int r = comboPos!.row + rowOffset;
+          if (r >= 0 && r < board.rowCount) {
+            for (int c = 0; c < board.colCount; c++) {
+              final pos = GridPosition(r, c);
+              if (board.get(pos) != null) {
+                toClear.add(pos);
+                processingQueue.add(pos);
+                specialClearsMap[pos] = board.get(pos)!;
+              }
+            }
+          }
+        }
+        for (int colOffset = -1; colOffset <= 1; colOffset++) {
+          int c = comboPos!.col + colOffset;
+          if (c >= 0 && c < board.colCount) {
+            for (int r = 0; r < board.rowCount; r++) {
+              final pos = GridPosition(r, c);
+              if (board.get(pos) != null) {
+                toClear.add(pos);
+                processingQueue.add(pos);
+                specialClearsMap[pos] = board.get(pos)!;
+              }
+            }
+          }
+        }
+      } else if (triggeredCombo == ComboType.burstBurst) {
+        // Clear 5x5 area
+        for (int r = comboPos!.row - 2; r <= comboPos.row + 2; r++) {
+          for (int c = comboPos.col - 2; c <= comboPos.col + 2; c++) {
+            final target = GridPosition(r, c);
+            if (board.isInBounds(target) && board.get(target) != null) {
+              toClear.add(target);
+              processingQueue.add(target);
+              specialClearsMap[target] = board.get(target)!;
+            }
           }
         }
       }
@@ -320,6 +424,8 @@ class CascadeResolver {
       createdSpecials: createdSpecials,
       clearedMarks: clearedMarks,
       potDamages: potDamages,
+      triggeredCombo: triggeredCombo,
+      comboPosition: comboPos,
     );
   }
 
