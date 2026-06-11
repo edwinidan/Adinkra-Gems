@@ -9,9 +9,10 @@ void main() {
       await SettingsService.init();
     });
 
-    test('defaults to sound and music enabled', () {
+    test('defaults to sound and music enabled, tile version 1', () {
       expect(SettingsService.soundEnabled, isTrue);
       expect(SettingsService.musicEnabled, isTrue);
+      expect(SettingsService.tileVersion, equals(1));
     });
 
     test('can persistently save sound preference', () async {
@@ -28,6 +29,14 @@ void main() {
 
       await SettingsService.setMusicEnabled(true);
       expect(SettingsService.musicEnabled, isTrue);
+    });
+
+    test('can persistently save tile version preference', () async {
+      await SettingsService.setTileVersion(2);
+      expect(SettingsService.tileVersion, equals(2));
+
+      await SettingsService.setTileVersion(1);
+      expect(SettingsService.tileVersion, equals(1));
     });
   });
 }

@@ -4,13 +4,15 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import '../../game/models/tile_model.dart';
 import '../../game/models/special_gem_type.dart';
+import '../../services/settings_service.dart';
+import '../adinkra_gems_game.dart';
 import '../board/grid_position.dart';
 
 /// The visual representation of a gem tile on the Flame game board.
 ///
 /// Handles rendering the gem sprite, and will handle animations
 /// (swaps, falls, matches) in later phases.
-class TileComponent extends SpriteComponent {
+class TileComponent extends SpriteComponent with HasGameRef<AdinkraGemsGame> {
   /// The logical model containing the state of this tile.
   final TileModel tileModel;
 
@@ -53,9 +55,31 @@ class TileComponent extends SpriteComponent {
   /// Check if the tile is currently playing its entrance zoom animation.
   bool get isAnimatingEntrance => children.any((c) => c is ScaleEffect);
 
+  SpecialGemType? _lastSpecialType;
+  int? _lastTileVersion;
+
+  void _updateSprite() {
+    final currentVersion = SettingsService.tileVersion;
+    if (tileModel.specialType == _lastSpecialType && currentVersion == _lastTileVersion) {
+      return;
+    }
+    _lastSpecialType = tileModel.specialType;
+    _lastTileVersion = currentVersion;
+
+    final targetSprite = gameRef.getSpriteFor(
+      gemType: tileModel.gemType,
+      specialType: tileModel.specialType,
+      tileVersion: currentVersion,
+    );
+    if (targetSprite != null) {
+      sprite = targetSprite;
+    }
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
+    _updateSprite();
 
     if (isSelected) {
       _pulseTime += dt * 5.0;
@@ -86,33 +110,11 @@ class TileComponent extends SpriteComponent {
 
     switch (tileModel.specialType) {
       case SpecialGemType.horizontalBlast:
-        // Draw horizontal glow stripe
-        final paint = Paint()
-          ..color = const Color(0x77FFFFFF)
-          ..style = PaintingStyle.fill;
-        canvas.drawRect(Rect.fromLTWH(0, size.y * 0.4, size.x, size.y * 0.2), paint);
-
-        final linePaint = Paint()
-          ..color = const Color(0xFFFFCC00)
-          ..strokeWidth = 3.0
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(0, size.y * 0.4), Offset(size.x, size.y * 0.4), linePaint);
-        canvas.drawLine(Offset(0, size.y * 0.6), Offset(size.x, size.y * 0.6), linePaint);
+        // Skip drawing canvas lines: horizontal striped tile sprite itself handles visualization
         break;
 
       case SpecialGemType.verticalBlast:
-        // Draw vertical glow stripe
-        final paint = Paint()
-          ..color = const Color(0x77FFFFFF)
-          ..style = PaintingStyle.fill;
-        canvas.drawRect(Rect.fromLTWH(size.x * 0.4, 0, size.x * 0.2, size.y), paint);
-
-        final linePaint = Paint()
-          ..color = const Color(0xFFFFCC00)
-          ..strokeWidth = 3.0
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(size.x * 0.4, 0), Offset(size.x * 0.4, size.y), linePaint);
-        canvas.drawLine(Offset(size.x * 0.6, 0), Offset(size.x * 0.6, size.y), linePaint);
+        // Skip drawing canvas lines: vertical striped tile sprite itself handles visualization
         break;
 
       case SpecialGemType.bomb:

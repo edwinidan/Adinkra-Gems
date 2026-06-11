@@ -11,6 +11,7 @@ import '../../game/board/move_validator.dart';
 import '../../game/board/reshuffle_service.dart';
 import '../../game/models/special_gem_type.dart';
 import '../../services/audio_service.dart';
+import '../../services/settings_service.dart';
 import '../adinkra_gems_game.dart';
 import '../systems/effects_manager.dart';
 import 'tile_component.dart';
@@ -51,7 +52,11 @@ class BoardComponent extends PositionComponent
         final pos = GridPosition(r, c);
         final tile = boardModel.get(pos);
         if (tile != null) {
-          final sprite = gameRef.gemSprites[tile.gemType];
+          final sprite = gameRef.getSpriteFor(
+            gemType: tile.gemType,
+            specialType: tile.specialType,
+            tileVersion: SettingsService.tileVersion,
+          );
           if (sprite != null) {
             final tileComp = TileComponent(
               tileModel: tile,
@@ -496,7 +501,11 @@ class BoardComponent extends PositionComponent
     // B. Spawn and slide down new tiles
     for (final spawn in step.spawns) {
       fallingAnimationsCount++;
-      final sprite = gameRef.gemSprites[spawn.tile.gemType]!;
+      final sprite = gameRef.getSpriteFor(
+        gemType: spawn.tile.gemType,
+        specialType: spawn.tile.specialType,
+        tileVersion: SettingsService.tileVersion,
+      )!;
 
       final tileComp = TileComponent(
         tileModel: spawn.tile,

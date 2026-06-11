@@ -15,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _soundEnabled = SettingsService.soundEnabled;
   bool _musicEnabled = SettingsService.musicEnabled;
+  int _tileVersion = SettingsService.tileVersion;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +63,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) async {
                 await SettingsService.setMusicEnabled(v);
                 setState(() => _musicEnabled = v);
+              },
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Appearance',
+              style: TextStyle(
+                color: AdinkraTheme.terracotta,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _SettingsTile(
+              id: 'toggle_tile_version',
+              label: 'Alternative Tile Art (V2)',
+              icon: Icons.palette_rounded,
+              value: _tileVersion == 2,
+              onChanged: (v) async {
+                final newVersion = v ? 2 : 1;
+                await SettingsService.setTileVersion(newVersion);
+                setState(() => _tileVersion = newVersion);
               },
             ),
             const SizedBox(height: 32),

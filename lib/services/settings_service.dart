@@ -8,6 +8,7 @@ class SettingsService {
 
   static const String _soundKey = 'soundEnabled';
   static const String _musicKey = 'musicEnabled';
+  static const String _tileVersionKey = 'tileVersion';
 
   /// Initializes the service. Must be called in main() before using options.
   static Future<void> init() async {
@@ -28,5 +29,13 @@ class SettingsService {
   /// Update the music setting.
   static Future<void> setMusicEnabled(bool enabled) async {
     await _prefs.setBool(_musicKey, enabled);
+  }
+
+  /// Check which tile version is selected (defaults to 1).
+  static int get tileVersion => _prefs.getInt(_tileVersionKey) ?? 1;
+
+  /// Update the tile version setting.
+  static Future<void> setTileVersion(int version) async {
+    await _prefs.setInt(_tileVersionKey, version);
   }
 }

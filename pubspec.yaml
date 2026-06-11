@@ -65,3 +65,6 @@ flutter:
     - assets/tiles/
     - assets/audio/
     - assets/new/
+    - assets/tiles_v2/
+    - assets/stripped_tile_horizontal/
+    - assets/stripped_tile_vertical/

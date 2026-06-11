@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../../app/routes.dart';
 import '../../app/theme.dart';
 import '../../app/woven_background.dart';
+import '../../game/data/levels.dart';
 import '../../services/progress_service.dart';
 import 'level_node_widget.dart';
 
-/// Level select screen — scrollable map displaying 10 level nodes.
+/// Level select screen — scrollable map displaying all level nodes.
 ///
 /// Unlocks level N+1 when level N is won, and renders high scores and star ratings
 /// persistently fetched from SharedPreferences.
@@ -38,7 +39,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
     final scores = <int, int>{};
     final stars = <int, int>{};
 
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 1; i <= allLevels.length; i++) {
       scores[i] = await ProgressService.getBestScore(i);
       stars[i] = await ProgressService.getBestStars(i);
     }
@@ -130,7 +131,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                               mainAxisSpacing: 20,
                               childAspectRatio: 0.88,
                             ),
-                        itemCount: 10,
+                        itemCount: allLevels.length,
                         itemBuilder: (context, index) {
                           final level = index + 1;
                           final isUnlocked = level <= _highestUnlockedLevel;

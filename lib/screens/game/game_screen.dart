@@ -107,7 +107,7 @@ class _GameScreenState extends State<GameScreen> {
           Navigator.pop(context); // Close dialog
           Navigator.pop(context); // Return to Map Select Screen
         },
-        onNextLevel: (level < 10)
+        onNextLevel: (level < allLevels.length)
             ? () {
                 Navigator.pop(context); // Close dialog
                 _loadNextLevel();

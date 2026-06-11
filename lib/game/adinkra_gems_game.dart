@@ -9,6 +9,9 @@ import '../../game/models/level_config.dart';
 import 'components/board_component.dart';
 import 'systems/level_controller.dart';
 
+import 'models/special_gem_type.dart';
+import '../../services/settings_service.dart';
+
 /// The root Flame Game class for Adinkra Gems.
 ///
 /// Manages preloading sprite assets, generating the starting board state,
@@ -24,7 +27,10 @@ class AdinkraGemsGame extends FlameGame {
   late final BoardModel boardModel;
 
   /// Preloaded sprites for quick, synchronous rendering.
-  final Map<GemType, Sprite> gemSprites = {};
+  final Map<GemType, Sprite> gemSpritesV1 = {};
+  final Map<GemType, Sprite> gemSpritesV2 = {};
+  final Map<GemType, Sprite> gemSpritesHorizontal = {};
+  final Map<GemType, Sprite> gemSpritesVertical = {};
 
   double _timerAccumulator = 0.0;
 
@@ -33,19 +39,35 @@ class AdinkraGemsGame extends FlameGame {
     required this.levelController,
   });
 
-  // Direct Flame to search for assets under 'assets/tiles/'.
+  // Direct Flame to search for assets from empty prefix so we can load full registered paths.
   @override
-  final images = Images(prefix: 'assets/tiles/');
+  final images = Images(prefix: '');
+
+  /// Returns the preloaded sprite based on the gem type, special type, and tile version.
+  Sprite? getSpriteFor({
+    required GemType gemType,
+    required SpecialGemType specialType,
+    required int tileVersion,
+  }) {
+    if (specialType == SpecialGemType.horizontalBlast) {
+      return gemSpritesHorizontal[gemType];
+    } else if (specialType == SpecialGemType.verticalBlast) {
+      return gemSpritesVertical[gemType];
+    } else {
+      return tileVersion == 2 ? gemSpritesV2[gemType] : gemSpritesV1[gemType];
+    }
+  }
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // 1. Preload all gem sprites into the map cache
+    // 1. Preload all gem sprites into the map caches
     for (final gemType in GemType.values) {
-      final filename = GemAssets.pathFor(gemType).split('/').last;
-      final sprite = await loadSprite(filename);
-      gemSprites[gemType] = sprite;
+      gemSpritesV1[gemType] = await loadSprite(GemAssets.pathFor(gemType, version: 1));
+      gemSpritesV2[gemType] = await loadSprite(GemAssets.pathFor(gemType, version: 2));
+      gemSpritesHorizontal[gemType] = await loadSprite(GemAssets.horizontalPathFor(gemType));
+      gemSpritesVertical[gemType] = await loadSprite(GemAssets.verticalPathFor(gemType));
     }
 
     // 2. Generate the starting board logic
