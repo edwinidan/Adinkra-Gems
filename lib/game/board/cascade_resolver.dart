@@ -38,7 +38,20 @@ class SpecialClearInfo {
   const SpecialClearInfo(this.position, this.tile);
 
   @override
-  String toString() => 'SpecialClearInfo(position: $position, tile: ${tile.gemType})';
+  String toString() =>
+      'SpecialClearInfo(position: $position, tile: ${tile.gemType})';
+}
+
+/// Represents damage taken by a clay pot blocker.
+class PotDamageInfo {
+  final GridPosition position;
+  final int remainingLayers; // 0 means destroyed
+
+  const PotDamageInfo(this.position, this.remainingLayers);
+
+  @override
+  String toString() =>
+      'PotDamageInfo(position: $position, remainingLayers: $remainingLayers)';
 }
 
 /// Holds all changes that occur during a single match-and-drop cycle.
@@ -58,16 +71,29 @@ class CascadeStep {
   /// Special tiles created in this step.
   final Map<GridPosition, SpecialGemType> createdSpecials;
 
+  /// List of grid positions where a clear mark was successfully removed.
+  final List<GridPosition> clearedMarks;
+
+  /// List of pots that took damage.
+  final List<PotDamageInfo> potDamages;
+
   const CascadeStep({
     required this.matches,
     required this.falls,
     required this.spawns,
     this.specialClears = const [],
     this.createdSpecials = const {},
+    this.clearedMarks = const [],
+    this.potDamages = const [],
   });
 
   bool get isEmpty =>
-      matches.isEmpty && falls.isEmpty && spawns.isEmpty && specialClears.isEmpty;
+      matches.isEmpty &&
+      falls.isEmpty &&
+      spawns.isEmpty &&
+      specialClears.isEmpty &&
+      clearedMarks.isEmpty &&
+      potDamages.isEmpty;
 }
 
 /// Resolves matches and computes cascading gravity drops on a [BoardModel].
@@ -124,8 +150,8 @@ class CascadeResolver {
       toClear.add(colorClearPos!);
       processingQueue.add(colorClearPos);
 
-      for (int r = 0; r < BoardModel.rows; r++) {
-        for (int c = 0; c < BoardModel.cols; c++) {
+      for (int r = 0; r < board.rowCount; r++) {
+        for (int c = 0; c < board.colCount; c++) {
           final pos = GridPosition(r, c);
           final tile = board.get(pos);
           if (tile != null && tile.gemType == targetColor) {
@@ -158,7 +184,11 @@ class CascadeResolver {
       if (tile.isSpecial && !activatedSpecials.contains(pos)) {
         activatedSpecials.add(pos);
 
-        final effectPositions = _getSpecialEffectPositions(board, pos, tile.specialType);
+        final effectPositions = _getSpecialEffectPositions(
+          board,
+          pos,
+          tile.specialType,
+        );
         for (final ep in effectPositions) {
           if (!toClear.contains(ep)) {
             toClear.add(ep);
@@ -176,13 +206,15 @@ class CascadeResolver {
     final createdSpecials = <GridPosition, SpecialGemType>{};
     final createdSpecialGems = <GridPosition, GemType>{};
     for (final group in matches) {
-      if (group.specialCreated != SpecialGemType.none && group.specialSpawnPosition != null) {
+      if (group.specialCreated != SpecialGemType.none &&
+          group.specialSpawnPosition != null) {
         createdSpecials[group.specialSpawnPosition!] = group.specialCreated;
         createdSpecialGems[group.specialSpawnPosition!] = group.gemType;
       }
     }
 
     // Mutate board model: clear cells except where special tiles are created
+    final clearedMarks = <GridPosition>[];
     for (final pos in toClear) {
       if (createdSpecials.containsKey(pos)) {
         // Upgrade this tile to special instead of clearing
@@ -191,47 +223,79 @@ class CascadeResolver {
           tile.specialType = createdSpecials[pos]!;
           tile.isMatched = false;
         } else {
-          board.set(pos, TileModel(
-            id: 'special_${pos.row}_${pos.col}_${DateTime.now().microsecondsSinceEpoch}',
-            gemType: createdSpecialGems[pos]!,
-            specialType: createdSpecials[pos]!,
-          ));
+          board.set(
+            pos,
+            TileModel(
+              id: 'special_${pos.row}_${pos.col}_${DateTime.now().microsecondsSinceEpoch}',
+              gemType: createdSpecialGems[pos]!,
+              specialType: createdSpecials[pos]!,
+            ),
+          );
         }
       } else {
         board.set(pos, null);
       }
+      
+      // Clear mark if present
+      final cellState = board.getCellState(pos);
+      if (cellState != null && cellState.hasMark) {
+        cellState.clearMark();
+        clearedMarks.add(pos);
+      }
     }
-
-    // 3. Drop existing tiles vertically to fill gaps
-    final falls = <TileFall>[];
-    for (int c = 0; c < BoardModel.cols; c++) {
-      // Traverse column from bottom (row 7) to top (row 0)
-      for (int r = BoardModel.rows - 1; r >= 0; r--) {
-        if (board.get(GridPosition(r, c)) == null) {
-          // Find the first non-null tile above this empty space
-          int scanRow = r - 1;
-          while (scanRow >= 0 && board.get(GridPosition(scanRow, c)) == null) {
-            scanRow--;
-          }
-
-          if (scanRow >= 0) {
-            // Found a tile! Move it logically down in the grid
-            final fallingTile = board.get(GridPosition(scanRow, c))!;
-            board.set(GridPosition(r, c), fallingTile);
-            board.set(GridPosition(scanRow, c), null);
-
-            falls.add(TileFall(GridPosition(scanRow, c), GridPosition(r, c)));
-          }
+    
+    // Check for pot damage around cleared tiles
+    final potDamages = <PotDamageInfo>[];
+    final damagedPots = <GridPosition>{};
+    for (final pos in toClear) {
+      final neighbors = [
+        GridPosition(pos.row - 1, pos.col),
+        GridPosition(pos.row + 1, pos.col),
+        GridPosition(pos.row, pos.col - 1),
+        GridPosition(pos.row, pos.col + 1),
+      ];
+      for (final n in neighbors) {
+        if (!board.isInBounds(n)) continue;
+        final state = board.getCellState(n);
+        if (state != null && state.hasPot && !damagedPots.contains(n)) {
+          state.damagePot();
+          potDamages.add(PotDamageInfo(n, state.potLayers));
+          damagedPots.add(n);
         }
       }
     }
 
-    // 4. Spawn new tiles for the empty cells at the top of each column
+    // 3. Compact tiles into the active cells of each column.
+    final falls = <TileFall>[];
+    for (int c = 0; c < board.colCount; c++) {
+      final activePositions = [
+        for (int r = board.rowCount - 1; r >= 0; r--)
+          if (board.isPlayable(GridPosition(r, c)) && !board.isBlocked(GridPosition(r, c))) GridPosition(r, c),
+      ];
+      final existingTiles = [
+        for (final position in activePositions)
+          if (board.get(position) case final tile?) (position, tile),
+      ];
+
+      for (final position in activePositions) {
+        board.set(position, null);
+      }
+      for (int index = 0; index < existingTiles.length; index++) {
+        final destination = activePositions[index];
+        final (source, tile) = existingTiles[index];
+        board.set(destination, tile);
+        if (source != destination) {
+          falls.add(TileFall(source, destination));
+        }
+      }
+    }
+
+    // 4. Spawn new tiles into every remaining active cell.
     final spawns = <TileSpawn>[];
-    for (int c = 0; c < BoardModel.cols; c++) {
-      for (int r = BoardModel.rows - 1; r >= 0; r--) {
+    for (int c = 0; c < board.colCount; c++) {
+      for (int r = board.rowCount - 1; r >= 0; r--) {
         final pos = GridPosition(r, c);
-        if (board.get(pos) == null) {
+        if (board.isPlayable(pos) && !board.isBlocked(pos) && board.get(pos) == null) {
           // Generate a new random gem tile
           final gem = availableGems[rng.nextInt(availableGems.length)];
           _spawnCounter++;
@@ -250,8 +314,12 @@ class CascadeResolver {
       matches: matches,
       falls: falls,
       spawns: spawns,
-      specialClears: specialClearsMap.entries.map((e) => SpecialClearInfo(e.key, e.value)).toList(),
+      specialClears: specialClearsMap.entries
+          .map((e) => SpecialClearInfo(e.key, e.value))
+          .toList(),
       createdSpecials: createdSpecials,
+      clearedMarks: clearedMarks,
+      potDamages: potDamages,
     );
   }
 
@@ -264,7 +332,7 @@ class CascadeResolver {
     switch (type) {
       case SpecialGemType.horizontalBlast:
         // Clear all tiles in the same row
-        for (int c = 0; c < BoardModel.cols; c++) {
+        for (int c = 0; c < board.colCount; c++) {
           if (c != pos.col) {
             positions.add(GridPosition(pos.row, c));
           }
@@ -272,7 +340,7 @@ class CascadeResolver {
         break;
       case SpecialGemType.verticalBlast:
         // Clear all tiles in the same column
-        for (int r = 0; r < BoardModel.rows; r++) {
+        for (int r = 0; r < board.rowCount; r++) {
           if (r != pos.row) {
             positions.add(GridPosition(r, pos.col));
           }
@@ -292,8 +360,8 @@ class CascadeResolver {
       case SpecialGemType.colorClear:
         // Clear all of a chosen color when triggered by a secondary blast/bomb
         final allGemsOnBoard = <GemType>{};
-        for (int r = 0; r < BoardModel.rows; r++) {
-          for (int c = 0; c < BoardModel.cols; c++) {
+        for (int r = 0; r < board.rowCount; r++) {
+          for (int c = 0; c < board.colCount; c++) {
             final t = board.get(GridPosition(r, c));
             if (t != null && t.specialType != SpecialGemType.colorClear) {
               allGemsOnBoard.add(t.gemType);
@@ -302,8 +370,8 @@ class CascadeResolver {
         }
         if (allGemsOnBoard.isNotEmpty) {
           final chosenColor = allGemsOnBoard.first;
-          for (int r = 0; r < BoardModel.rows; r++) {
-            for (int c = 0; c < BoardModel.cols; c++) {
+          for (int r = 0; r < board.rowCount; r++) {
+            for (int c = 0; c < board.colCount; c++) {
               final target = GridPosition(r, c);
               final t = board.get(target);
               if (t != null && t.gemType == chosenColor) {

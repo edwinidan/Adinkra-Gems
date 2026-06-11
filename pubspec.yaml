@@ -62,6 +62,7 @@ flutter:
 
   # Gem tile assets — 6 Adinkra symbol PNGs
   assets:
+    - assets/
     - assets/tiles/
     - assets/audio/
     - assets/new/

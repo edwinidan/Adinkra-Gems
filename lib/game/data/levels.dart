@@ -1,7 +1,14 @@
+import '../board/grid_position.dart';
+import '../models/board_layout.dart';
+import '../models/cell_blocker_definition.dart';
 import '../models/gem_type.dart';
+import '../models/initial_tile_definition.dart';
 import '../models/level_config.dart';
+import '../models/level_difficulty.dart';
 import '../models/level_objective.dart';
+import '../models/special_gem_type.dart';
 import '../models/star_thresholds.dart';
+import 'level_catalog.dart';
 
 /// All 6 gem types — used as the default available set for every level.
 const _allGems = [
@@ -15,8 +22,7 @@ const _allGems = [
 
 /// The static list of all 30 level configurations.
 ///
-/// Levels are 1-indexed to match the UI. Access by:
-///   `allLevels[levelNumber - 1]`
+/// Use [levelCatalog] for lookup rather than indexing this list directly.
 const List<LevelConfig> allLevels = [
   // ─────────────────────────────────────────────────────────────────────────
   // Level 1 — Teach basic matching
@@ -24,8 +30,12 @@ const List<LevelConfig> allLevels = [
   // Limit     : 20 moves
   // ─────────────────────────────────────────────────────────────────────────
   LevelConfig(
+    levelId: 'episode_1_level_1',
     levelNumber: 1,
     name: 'First Light',
+    difficulty: LevelDifficulty.tutorial,
+    tutorialHint: 'Swap two neighboring gems to make a line of three.',
+    targetPassRate: 0.95,
     objectives: [ScoreObjective(1000)],
     moveLimit: 20,
     availableGems: _allGems,
@@ -42,14 +52,21 @@ const List<LevelConfig> allLevels = [
   // Limit     : 22 moves
   // ─────────────────────────────────────────────────────────────────────────
   LevelConfig(
+    levelId: 'episode_1_level_2',
     levelNumber: 2,
     name: 'Sankofa Path',
-    objectives: [
-      CollectObjective(
-        gemType: GemType.yellowSankofa,
-        count: 12,
-      ),
-    ],
+    difficulty: LevelDifficulty.easy,
+    tutorialHint: 'Collect Sankofa gems before your moves run out.',
+    targetPassRate: 0.85,
+    boardLayout: BoardLayout(
+      inactiveCells: [
+        GridPosition(0, 0),
+        GridPosition(0, 7),
+        GridPosition(7, 0),
+        GridPosition(7, 7),
+      ],
+    ),
+    objectives: [CollectObjective(gemType: GemType.yellowSankofa, count: 12)],
     moveLimit: 22,
     availableGems: _allGems,
     starThresholds: StarThresholds(
@@ -65,8 +82,20 @@ const List<LevelConfig> allLevels = [
   // Limit     : 20 moves
   // ─────────────────────────────────────────────────────────────────────────
   LevelConfig(
+    levelId: 'episode_1_level_3',
     levelNumber: 3,
     name: 'Chain Reaction',
+    difficulty: LevelDifficulty.easy,
+    tutorialHint: 'Special gems can start powerful chain reactions.',
+    inGameHint: 'Swap the glowing Unity gem with any neighboring color.',
+    targetPassRate: 0.8,
+    initialTiles: [
+      InitialTileDefinition(
+        position: GridPosition(3, 3),
+        gemType: GemType.purpleAkofena,
+        specialType: SpecialGemType.colorClear,
+      ),
+    ],
     objectives: [ScoreObjective(1800)],
     moveLimit: 20,
     availableGems: _allGems,
@@ -85,12 +114,7 @@ const List<LevelConfig> allLevels = [
   LevelConfig(
     levelNumber: 4,
     name: "Dwennimmen's Trial",
-    objectives: [
-      CollectObjective(
-        gemType: GemType.blueDwennimmen,
-        count: 15,
-      ),
-    ],
+    objectives: [CollectObjective(gemType: GemType.blueDwennimmen, count: 15)],
     moveLimit: 24,
     availableGems: _allGems,
     starThresholds: StarThresholds(
@@ -131,10 +155,7 @@ const List<LevelConfig> allLevels = [
         gemType: GemType.redFuntumfunefuDenkyemfunefu,
         count: 12,
       ),
-      CollectObjective(
-        gemType: GemType.greenGyeNyame,
-        count: 12,
-      ),
+      CollectObjective(gemType: GemType.greenGyeNyame, count: 12),
     ],
     moveLimit: 25,
     availableGems: _allGems,
@@ -171,12 +192,7 @@ const List<LevelConfig> allLevels = [
   LevelConfig(
     levelNumber: 8,
     name: "Akofena's Wrath",
-    objectives: [
-      CollectObjective(
-        gemType: GemType.purpleAkofena,
-        count: 20,
-      ),
-    ],
+    objectives: [CollectObjective(gemType: GemType.purpleAkofena, count: 20)],
     timeLimitSeconds: 75,
     availableGems: _allGems,
     starThresholds: StarThresholds(
@@ -196,10 +212,7 @@ const List<LevelConfig> allLevels = [
     name: 'Stars and Glory',
     objectives: [
       ScoreObjective(3500),
-      CollectObjective(
-        gemType: GemType.silverNsoromma,
-        count: 15,
-      ),
+      CollectObjective(gemType: GemType.silverNsoromma, count: 15),
     ],
     moveLimit: 28,
     availableGems: _allGems,
@@ -299,7 +312,10 @@ const List<LevelConfig> allLevels = [
     levelNumber: 14,
     name: 'Sacred Trinity',
     objectives: [
-      CollectObjective(gemType: GemType.redFuntumfunefuDenkyemfunefu, count: 10),
+      CollectObjective(
+        gemType: GemType.redFuntumfunefuDenkyemfunefu,
+        count: 10,
+      ),
       CollectObjective(gemType: GemType.purpleAkofena, count: 10),
       CollectObjective(gemType: GemType.silverNsoromma, count: 10),
     ],
@@ -338,9 +354,7 @@ const List<LevelConfig> allLevels = [
   LevelConfig(
     levelNumber: 16,
     name: 'Green Dominion',
-    objectives: [
-      CollectObjective(gemType: GemType.greenGyeNyame, count: 25),
-    ],
+    objectives: [CollectObjective(gemType: GemType.greenGyeNyame, count: 25)],
     moveLimit: 26,
     availableGems: _allGems,
     starThresholds: StarThresholds(
@@ -381,7 +395,10 @@ const List<LevelConfig> allLevels = [
     levelNumber: 18,
     name: 'Funtum Fire',
     objectives: [
-      CollectObjective(gemType: GemType.redFuntumfunefuDenkyemfunefu, count: 20),
+      CollectObjective(
+        gemType: GemType.redFuntumfunefuDenkyemfunefu,
+        count: 20,
+      ),
     ],
     timeLimitSeconds: 65,
     availableGems: _allGems,
@@ -463,9 +480,7 @@ const List<LevelConfig> allLevels = [
   LevelConfig(
     levelNumber: 22,
     name: 'The Deep Blue',
-    objectives: [
-      CollectObjective(gemType: GemType.blueDwennimmen, count: 30),
-    ],
+    objectives: [CollectObjective(gemType: GemType.blueDwennimmen, count: 30)],
     moveLimit: 30,
     availableGems: _allGems,
     starThresholds: StarThresholds(
@@ -529,7 +544,10 @@ const List<LevelConfig> allLevels = [
     objectives: [
       ScoreObjective(5000),
       CollectObjective(gemType: GemType.greenGyeNyame, count: 15),
-      CollectObjective(gemType: GemType.redFuntumfunefuDenkyemfunefu, count: 15),
+      CollectObjective(
+        gemType: GemType.redFuntumfunefuDenkyemfunefu,
+        count: 15,
+      ),
     ],
     timeLimitSeconds: 80,
     availableGems: _allGems,
@@ -629,7 +647,10 @@ const List<LevelConfig> allLevels = [
     name: 'The Eternal Symbol',
     objectives: [
       ScoreObjective(12000),
-      CollectObjective(gemType: GemType.redFuntumfunefuDenkyemfunefu, count: 15),
+      CollectObjective(
+        gemType: GemType.redFuntumfunefuDenkyemfunefu,
+        count: 15,
+      ),
       CollectObjective(gemType: GemType.silverNsoromma, count: 15),
       CollectObjective(gemType: GemType.yellowSankofa, count: 15),
       CollectObjective(gemType: GemType.purpleAkofena, count: 15),
@@ -645,4 +666,92 @@ const List<LevelConfig> allLevels = [
       threeStar: 22000,
     ),
   ),
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 3 TEST LEVELS (Levels 31–33)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Level 31 — Clear Marks Challenge
+  // Objective : Clear 12 marks
+  // Limit     : 25 moves
+  // ─────────────────────────────────────────────────────────────────────────
+  LevelConfig(
+    levelNumber: 31,
+    name: 'Marked For Greatness',
+    objectives: [ClearMarkObjective()],
+    moveLimit: 25,
+    availableGems: _allGems,
+    clearMarkCells: [
+      GridPosition(2, 2), GridPosition(2, 3), GridPosition(2, 4), GridPosition(2, 5),
+      GridPosition(4, 2), GridPosition(4, 3), GridPosition(4, 4), GridPosition(4, 5),
+      GridPosition(6, 2), GridPosition(6, 3), GridPosition(6, 4), GridPosition(6, 5),
+    ],
+    starThresholds: StarThresholds(
+      oneStar: 2000,
+      twoStar: 3000,
+      threeStar: 4000,
+    ),
+  ),
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // Level 32 — Clay Pot Blockers
+  // Objective : Destroy 8 pots
+  // Limit     : 30 moves
+  // ─────────────────────────────────────────────────────────────────────────
+  LevelConfig(
+    levelNumber: 32,
+    name: 'Shattered Earth',
+    objectives: [ClearBlockerObjective()],
+    moveLimit: 30,
+    availableGems: _allGems,
+    clayPotCells: [
+      CellBlockerDefinition(position: GridPosition(3, 3), layers: 2),
+      CellBlockerDefinition(position: GridPosition(3, 4), layers: 2),
+      CellBlockerDefinition(position: GridPosition(4, 3), layers: 2),
+      CellBlockerDefinition(position: GridPosition(4, 4), layers: 2),
+      CellBlockerDefinition(position: GridPosition(1, 1), layers: 1),
+      CellBlockerDefinition(position: GridPosition(1, 6), layers: 1),
+      CellBlockerDefinition(position: GridPosition(6, 1), layers: 1),
+      CellBlockerDefinition(position: GridPosition(6, 6), layers: 1),
+    ],
+    starThresholds: StarThresholds(
+      oneStar: 2000,
+      twoStar: 3500,
+      threeStar: 5000,
+    ),
+  ),
+  
+  // ─────────────────────────────────────────────────────────────────────────
+  // Level 33 — Mixed Marks, Pots, and Collection
+  // Objective : Clear 6 marks, Destroy 4 pots, Collect 15 Sankofa
+  // Limit     : 35 moves
+  // ─────────────────────────────────────────────────────────────────────────
+  LevelConfig(
+    levelNumber: 33,
+    name: 'The Artisan\'s Workshop',
+    objectives: [
+      ClearMarkObjective(),
+      ClearBlockerObjective(),
+      CollectObjective(gemType: GemType.yellowSankofa, count: 15),
+    ],
+    moveLimit: 35,
+    availableGems: _allGems,
+    clearMarkCells: [
+      GridPosition(7, 2), GridPosition(7, 3), GridPosition(7, 4), GridPosition(7, 5),
+      GridPosition(6, 3), GridPosition(6, 4),
+    ],
+    clayPotCells: [
+      CellBlockerDefinition(position: GridPosition(5, 2), layers: 2),
+      CellBlockerDefinition(position: GridPosition(5, 5), layers: 2),
+      CellBlockerDefinition(position: GridPosition(4, 3), layers: 1),
+      CellBlockerDefinition(position: GridPosition(4, 4), layers: 1),
+    ],
+    starThresholds: StarThresholds(
+      oneStar: 3000,
+      twoStar: 5000,
+      threeStar: 7500,
+    ),
+  ),
 ];
+
+final LevelCatalog levelCatalog = LevelCatalog(allLevels);

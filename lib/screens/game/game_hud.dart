@@ -129,6 +129,18 @@ class GameHud extends StatelessWidget {
               Expanded(child: _ObjectivesBar(levelController: levelController)),
             ],
           ),
+          if (config.inGameHint != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              config.inGameHint!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AdinkraTheme.cocoa,
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -209,6 +221,30 @@ class _ObjectivesBar extends StatelessWidget {
                   const Icon(Icons.broken_image, color: Colors.red, size: 18),
             ),
             label: '$collected / ${objective.count}',
+          ),
+        );
+      } else if (objective is ClearMarkObjective) {
+        final cleared = levelController.totalMarks - levelController.marksRemaining;
+        chips.add(
+          _ObjectiveChip(
+            icon: const Icon(
+              Icons.square_rounded,
+              color: AdinkraTheme.primaryGold,
+              size: 16,
+            ),
+            label: '$cleared / ${levelController.totalMarks}',
+          ),
+        );
+      } else if (objective is ClearBlockerObjective) {
+        final cleared = levelController.totalPots - levelController.potsRemaining;
+        chips.add(
+          _ObjectiveChip(
+            icon: const Icon(
+              Icons.shield_rounded,
+              color: AdinkraTheme.terracotta,
+              size: 16,
+            ),
+            label: '$cleared / ${levelController.totalPots}',
           ),
         );
       }

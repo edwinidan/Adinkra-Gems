@@ -15,7 +15,7 @@ class MoveValidator {
   final MatchFinder _matchFinder;
 
   MoveValidator({MatchFinder? matchFinder})
-      : _matchFinder = matchFinder ?? MatchFinder();
+    : _matchFinder = matchFinder ?? MatchFinder();
 
   // ── Adjacency ─────────────────────────────────────────────────────────────
 
@@ -29,6 +29,9 @@ class MoveValidator {
   /// Clones the board first so the real board is never mutated.
   bool isValidSwap(BoardModel board, GridPosition a, GridPosition b) {
     if (!isAdjacent(a, b)) return false;
+    
+    // Cannot swap blocked cells (e.g. Clay Pots)
+    if (board.isBlocked(a) || board.isBlocked(b)) return false;
 
     final tileA = board.get(a);
     final tileB = board.get(b);
@@ -54,16 +57,17 @@ class MoveValidator {
   /// Used by [BoardGenerator] and later by [ReshuffleService] to decide
   /// whether to reshuffle.
   bool hasAnyValidMove(BoardModel board) {
-    for (int r = 0; r < BoardModel.rows; r++) {
-      for (int c = 0; c < BoardModel.cols; c++) {
+    for (int r = 0; r < board.rowCount; r++) {
+      for (int c = 0; c < board.colCount; c++) {
         final pos = GridPosition(r, c);
+        if (!board.isPlayable(pos)) continue;
 
         // Check the right neighbour
-        if (c + 1 < BoardModel.cols) {
+        if (c + 1 < board.colCount) {
           if (isValidSwap(board, pos, GridPosition(r, c + 1))) return true;
         }
         // Check the bottom neighbour
-        if (r + 1 < BoardModel.rows) {
+        if (r + 1 < board.rowCount) {
           if (isValidSwap(board, pos, GridPosition(r + 1, c))) return true;
         }
       }

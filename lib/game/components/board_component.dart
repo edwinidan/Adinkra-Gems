@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/widgets.dart' show Curves;
 import 'package:flame/components.dart';
@@ -9,6 +10,7 @@ import '../../game/board/cascade_resolver.dart';
 import '../../game/board/grid_position.dart';
 import '../../game/board/move_validator.dart';
 import '../../game/board/reshuffle_service.dart';
+import '../../game/models/gem_type.dart';
 import '../../game/models/special_gem_type.dart';
 import '../../services/audio_service.dart';
 import '../../services/settings_service.dart';
@@ -20,6 +22,8 @@ import 'tile_component.dart';
 /// and handles all user input (taps, selects, and drags/swipes).
 class BoardComponent extends PositionComponent
     with HasGameRef<AdinkraGemsGame>, TapCallbacks, DragCallbacks {
+  static const int _maxCascadeSteps = 100;
+
   final BoardModel boardModel;
   final double tileSize;
 
@@ -29,15 +33,13 @@ class BoardComponent extends PositionComponent
   bool _inputLocked = false;
   int _cascadeIndex = 0;
 
-  BoardComponent({
-    required this.boardModel,
-    required this.tileSize,
-  }) : super(
-          size: Vector2(
-            tileSize * BoardModel.cols,
-            tileSize * BoardModel.rows,
-          ),
-        );
+  BoardComponent({required this.boardModel, required this.tileSize})
+    : super(
+        size: Vector2(
+          tileSize * boardModel.colCount,
+          tileSize * boardModel.rowCount,
+        ),
+      );
 
   @override
   Future<void> onLoad() async {
@@ -47,8 +49,8 @@ class BoardComponent extends PositionComponent
 
   /// Populates the visual board with tiles from the logical board model.
   void _spawnTiles() {
-    for (int r = 0; r < BoardModel.rows; r++) {
-      for (int c = 0; c < BoardModel.cols; c++) {
+    for (int r = 0; r < boardModel.rowCount; r++) {
+      for (int c = 0; c < boardModel.colCount; c++) {
         final pos = GridPosition(r, c);
         final tile = boardModel.get(pos);
         if (tile != null) {
@@ -93,7 +95,7 @@ class BoardComponent extends PositionComponent
     final col = (localPos.x / tileSize).floor();
     final row = (localPos.y / tileSize).floor();
     final pos = GridPosition(row, col);
-    if (boardModel.isInBounds(pos)) {
+    if (boardModel.isPlayable(pos)) {
       return pos;
     }
     return null;
@@ -101,9 +103,10 @@ class BoardComponent extends PositionComponent
 
   /// Checks if any tile is currently playing a motion animation or if input is locked.
   bool get isLocked {
-    if (_inputLocked) return true;
+    if (_inputLocked || !gameRef.levelController.canAcceptInput) return true;
     for (final child in children) {
-      if (child is TileComponent && child.children.any((c) => c is MoveEffect)) {
+      if (child is TileComponent &&
+          child.children.any((c) => c is MoveEffect)) {
         return true;
       }
     }
@@ -180,7 +183,7 @@ class BoardComponent extends PositionComponent
         targetPos = GridPosition(start.row + rowDelta, start.col);
       }
 
-      if (boardModel.isInBounds(targetPos)) {
+      if (boardModel.isPlayable(targetPos)) {
         swapTiles(start, targetPos);
       }
 
@@ -222,8 +225,14 @@ class BoardComponent extends PositionComponent
     tileB.isSelected = false;
     _selectedPosition = null;
 
-    final posA = Vector2(a.col * tileSize + tileSize / 2, a.row * tileSize + tileSize / 2);
-    final posB = Vector2(b.col * tileSize + tileSize / 2, b.row * tileSize + tileSize / 2);
+    final posA = Vector2(
+      a.col * tileSize + tileSize / 2,
+      a.row * tileSize + tileSize / 2,
+    );
+    final posB = Vector2(
+      b.col * tileSize + tileSize / 2,
+      b.row * tileSize + tileSize / 2,
+    );
 
     final validator = MoveValidator();
     final isValid = validator.isValidSwap(boardModel, a, b);
@@ -231,6 +240,11 @@ class BoardComponent extends PositionComponent
     const swapDuration = 0.22;
 
     if (isValid) {
+      if (!gameRef.levelController.beginMoveResolution()) {
+        _inputLocked = false;
+        return;
+      }
+
       // 1. Valid Swap: Update model and animate visual position change
       boardModel.swap(a, b);
       tileA.gridPosition = b;
@@ -239,33 +253,67 @@ class BoardComponent extends PositionComponent
       // Reset cascade index
       _cascadeIndex = 0;
 
-      // Decrement move count in LevelController
-      gameRef.levelController.useMove();
-
-      tileA.add(MoveEffect.to(
-        posB,
-        EffectController(duration: swapDuration, curve: Curves.easeInOutQuad),
-      ));
-      tileB.add(MoveEffect.to(
-        posA,
-        EffectController(duration: swapDuration, curve: Curves.easeInOutQuad),
-      )..onComplete = () {
-        // Start Cascade resolution chain
-        _runCascadeCycle(swapA: a, swapB: b);
-      });
+      tileA.add(
+        MoveEffect.to(
+          posB,
+          EffectController(duration: swapDuration, curve: Curves.easeInOutQuad),
+        ),
+      );
+      tileB.add(
+        MoveEffect.to(
+            posA,
+            EffectController(
+              duration: swapDuration,
+              curve: Curves.easeInOutQuad,
+            ),
+          )
+          ..onComplete = () {
+            // Start Cascade resolution chain
+            _runCascadeCycle(swapA: a, swapB: b);
+          },
+      );
     } else {
       // 2. Invalid Swap: Animate sliding swap, then bounce back immediately
-      tileA.add(SequenceEffect([
-        MoveEffect.to(posB, EffectController(duration: swapDuration * 0.8, curve: Curves.easeOutQuad)),
-        MoveEffect.to(posA, EffectController(duration: swapDuration * 0.8, curve: Curves.easeInQuad)),
-      ]));
+      tileA.add(
+        SequenceEffect([
+          MoveEffect.to(
+            posB,
+            EffectController(
+              duration: swapDuration * 0.8,
+              curve: Curves.easeOutQuad,
+            ),
+          ),
+          MoveEffect.to(
+            posA,
+            EffectController(
+              duration: swapDuration * 0.8,
+              curve: Curves.easeInQuad,
+            ),
+          ),
+        ]),
+      );
 
-      tileB.add(SequenceEffect([
-        MoveEffect.to(posA, EffectController(duration: swapDuration * 0.8, curve: Curves.easeOutQuad)),
-        MoveEffect.to(posB, EffectController(duration: swapDuration * 0.8, curve: Curves.easeInQuad)),
-      ])..onComplete = () {
-        _inputLocked = false;
-      });
+      tileB.add(
+        SequenceEffect([
+            MoveEffect.to(
+              posA,
+              EffectController(
+                duration: swapDuration * 0.8,
+                curve: Curves.easeOutQuad,
+              ),
+            ),
+            MoveEffect.to(
+              posB,
+              EffectController(
+                duration: swapDuration * 0.8,
+                curve: Curves.easeInQuad,
+              ),
+            ),
+          ])
+          ..onComplete = () {
+            _inputLocked = false;
+          },
+      );
     }
   }
 
@@ -283,9 +331,11 @@ class BoardComponent extends PositionComponent
     if (step == null) {
       // Cascade complete! Board is now stable. Reset cascade index.
       _cascadeIndex = 0;
+      gameRef.levelController.finishResolution();
 
       final validator = MoveValidator();
-      if (!validator.hasAnyValidMove(boardModel) && !gameRef.levelController.isGameOver) {
+      if (!validator.hasAnyValidMove(boardModel) &&
+          !gameRef.levelController.isGameOver) {
         _triggerReshuffle();
       } else {
         _inputLocked = false;
@@ -294,6 +344,13 @@ class BoardComponent extends PositionComponent
     }
 
     _inputLocked = true;
+
+    if (_cascadeIndex >= _maxCascadeSteps) {
+      _replaceBoardWithFreshBoard();
+      gameRef.levelController.finishResolution();
+      _inputLocked = false;
+      return;
+    }
 
     // Determine cascade multiplier
     double multiplier = 1.0;
@@ -349,7 +406,8 @@ class BoardComponent extends PositionComponent
     final triggeredSpecials = <GridPosition, SpecialGemType>{};
     for (final pos in matchedPositions) {
       final tileComp = tileAt(pos);
-      if (tileComp != null && tileComp.tileModel.specialType != SpecialGemType.none) {
+      if (tileComp != null &&
+          tileComp.tileModel.specialType != SpecialGemType.none) {
         triggeredSpecials[pos] = tileComp.tileModel.specialType;
       }
     }
@@ -370,7 +428,11 @@ class BoardComponent extends PositionComponent
               EffectsManager.spawnBombBlast(this, tileComp.position, tileSize);
               break;
             case SpecialGemType.colorClear:
-              EffectsManager.spawnColorClearPulse(this, tileComp.position, tileSize);
+              EffectsManager.spawnColorClearPulse(
+                this,
+                tileComp.position,
+                tileSize,
+              );
               break;
             case SpecialGemType.none:
               break;
@@ -394,18 +456,27 @@ class BoardComponent extends PositionComponent
 
       double sumX = 0, sumY = 0;
       for (final pos in group.positions) {
-        final wPos = Vector2(pos.col * tileSize + tileSize / 2, pos.row * tileSize + tileSize / 2);
+        final wPos = Vector2(
+          pos.col * tileSize + tileSize / 2,
+          pos.row * tileSize + tileSize / 2,
+        );
         sumX += wPos.x;
         sumY += wPos.y;
         EffectsManager.spawnParticleBurst(this, wPos, group.gemType);
       }
-      final centerPos = Vector2(sumX / group.positions.length, sumY / group.positions.length);
+      final centerPos = Vector2(
+        sumX / group.positions.length,
+        sumY / group.positions.length,
+      );
       EffectsManager.spawnScorePopup(this, centerPos, pointsEarned);
     }
 
     // 2. Special Clears
     for (final sc in step.specialClears) {
-      final wPos = Vector2(sc.position.col * tileSize + tileSize / 2, sc.position.row * tileSize + tileSize / 2);
+      final wPos = Vector2(
+        sc.position.col * tileSize + tileSize / 2,
+        sc.position.row * tileSize + tileSize / 2,
+      );
       final pointsEarned = (20 * multiplier).toInt();
       EffectsManager.spawnScorePopup(this, wPos, pointsEarned);
       EffectsManager.spawnParticleBurst(this, wPos, sc.tile.gemType);
@@ -413,7 +484,9 @@ class BoardComponent extends PositionComponent
 
     // Exclude the positions of newly created special tiles from visual removal!
     final createdSpecials = step.createdSpecials;
-    final positionsToRemove = matchedPositions.where((pos) => !createdSpecials.containsKey(pos)).toList();
+    final positionsToRemove = matchedPositions
+        .where((pos) => !createdSpecials.containsKey(pos))
+        .toList();
 
     // Visual upgrade effect for created special tiles
     for (final entry in createdSpecials.entries) {
@@ -425,8 +498,14 @@ class BoardComponent extends PositionComponent
         tileComp.tileModel.specialType = type;
         tileComp.add(
           SequenceEffect([
-            ScaleEffect.to(Vector2.all(1.25), EffectController(duration: 0.15, curve: Curves.easeOut)),
-            ScaleEffect.to(Vector2.all(1.0), EffectController(duration: 0.15, curve: Curves.easeIn)),
+            ScaleEffect.to(
+              Vector2.all(1.25),
+              EffectController(duration: 0.15, curve: Curves.easeOut),
+            ),
+            ScaleEffect.to(
+              Vector2.all(1.0),
+              EffectController(duration: 0.15, curve: Curves.easeIn),
+            ),
           ]),
         );
       }
@@ -449,6 +528,32 @@ class BoardComponent extends PositionComponent
             }
           },
         );
+      }
+    }
+    
+    // Animate mark clears
+    final rng = Random();
+    for (final markPos in step.clearedMarks) {
+      final wPos = Vector2(
+        markPos.col * tileSize + tileSize / 2,
+        markPos.row * tileSize + tileSize / 2,
+      );
+      EffectsManager.spawnParticleBurst(this, wPos, GemType.values[rng.nextInt(GemType.values.length)]); // Use random color for mark particle
+      gameRef.levelController.recordMarkCleared();
+    }
+    
+    // Animate pot damages
+    for (final potDmg in step.potDamages) {
+      final wPos = Vector2(
+        potDmg.position.col * tileSize + tileSize / 2,
+        potDmg.position.row * tileSize + tileSize / 2,
+      );
+      if (potDmg.remainingLayers == 0) {
+        EffectsManager.spawnParticleBurst(this, wPos, GemType.values[rng.nextInt(GemType.values.length)]);
+        gameRef.levelController.recordPotDestroyed();
+      } else {
+        // Just play a damage particle (using score popup temporarily for feedback, or board shake is enough)
+        EffectsManager.spawnParticleBurst(this, wPos, GemType.values[rng.nextInt(GemType.values.length)]);
       }
     }
 
@@ -481,19 +586,29 @@ class BoardComponent extends PositionComponent
 
         tileComp.add(
           MoveEffect.to(
-            Vector2(targetX, targetY),
-            EffectController(duration: 0.28, curve: Curves.easeInQuad),
-          )..onComplete = () {
-            // Play landing squash and stretch
-            tileComp.add(
-              SequenceEffect([
-                ScaleEffect.to(Vector2(1.15, 0.85), EffectController(duration: 0.07, curve: Curves.easeOut)),
-                ScaleEffect.to(Vector2(0.92, 1.08), EffectController(duration: 0.07, curve: Curves.easeInOut)),
-                ScaleEffect.to(Vector2.all(1.0), EffectController(duration: 0.07, curve: Curves.easeIn)),
-              ]),
-            );
-            onAnimationComplete();
-          },
+              Vector2(targetX, targetY),
+              EffectController(duration: 0.28, curve: Curves.easeInQuad),
+            )
+            ..onComplete = () {
+              // Play landing squash and stretch
+              tileComp.add(
+                SequenceEffect([
+                  ScaleEffect.to(
+                    Vector2(1.15, 0.85),
+                    EffectController(duration: 0.07, curve: Curves.easeOut),
+                  ),
+                  ScaleEffect.to(
+                    Vector2(0.92, 1.08),
+                    EffectController(duration: 0.07, curve: Curves.easeInOut),
+                  ),
+                  ScaleEffect.to(
+                    Vector2.all(1.0),
+                    EffectController(duration: 0.07, curve: Curves.easeIn),
+                  ),
+                ]),
+              );
+              onAnimationComplete();
+            },
         );
       }
     }
@@ -526,19 +641,29 @@ class BoardComponent extends PositionComponent
 
       tileComp.add(
         MoveEffect.to(
-          Vector2(targetX, targetY),
-          EffectController(duration: 0.32, curve: Curves.easeInQuad),
-        )..onComplete = () {
-          // Play landing squash and stretch
-          tileComp.add(
-            SequenceEffect([
-              ScaleEffect.to(Vector2(1.15, 0.85), EffectController(duration: 0.07, curve: Curves.easeOut)),
-              ScaleEffect.to(Vector2(0.92, 1.08), EffectController(duration: 0.07, curve: Curves.easeInOut)),
-              ScaleEffect.to(Vector2.all(1.0), EffectController(duration: 0.07, curve: Curves.easeIn)),
-            ]),
-          );
-          onAnimationComplete();
-        },
+            Vector2(targetX, targetY),
+            EffectController(duration: 0.32, curve: Curves.easeInQuad),
+          )
+          ..onComplete = () {
+            // Play landing squash and stretch
+            tileComp.add(
+              SequenceEffect([
+                ScaleEffect.to(
+                  Vector2(1.15, 0.85),
+                  EffectController(duration: 0.07, curve: Curves.easeOut),
+                ),
+                ScaleEffect.to(
+                  Vector2(0.92, 1.08),
+                  EffectController(duration: 0.07, curve: Curves.easeInOut),
+                ),
+                ScaleEffect.to(
+                  Vector2.all(1.0),
+                  EffectController(duration: 0.07, curve: Curves.easeIn),
+                ),
+              ]),
+            );
+            onAnimationComplete();
+          },
       );
     }
 
@@ -577,9 +702,10 @@ class BoardComponent extends PositionComponent
       );
       tileComp.add(
         ScaleEffect.to(
-          Vector2.all(0.2),
-          EffectController(duration: 0.45, curve: Curves.easeInBack),
-        )..onComplete = () {
+            Vector2.all(0.2),
+            EffectController(duration: 0.45, curve: Curves.easeInBack),
+          )
+          ..onComplete = () {
             activeAnimations--;
 
             if (activeAnimations == 0) {
@@ -587,18 +713,7 @@ class BoardComponent extends PositionComponent
               final success = ReshuffleService.reshuffle(boardModel);
 
               if (!success) {
-                // Hard Fallback: Force regenerate board and reset components
-                final fresh = BoardGenerator.generate(gameRef.levelConfig.availableGems);
-                for (int r = 0; r < BoardModel.rows; r++) {
-                  for (int c = 0; c < BoardModel.cols; c++) {
-                    final pos = GridPosition(r, c);
-                    boardModel.set(pos, fresh.get(pos));
-                  }
-                }
-
-                // Clean components and rebuild
-                children.whereType<TileComponent>().forEach((t) => t.removeFromParent());
-                _spawnTiles();
+                _replaceBoardWithFreshBoard();
                 _inputLocked = false;
                 return;
               }
@@ -619,8 +734,8 @@ class BoardComponent extends PositionComponent
     for (final tileComp in tilesList) {
       GridPosition? newPos;
       // Search where this tile has been shuffled to
-      for (int r = 0; r < BoardModel.rows; r++) {
-        for (int c = 0; c < BoardModel.cols; c++) {
+      for (int r = 0; r < boardModel.rowCount; r++) {
+        for (int c = 0; c < boardModel.colCount; c++) {
           final pos = GridPosition(r, c);
           if (boardModel.get(pos)?.id == tileComp.tileModel.id) {
             newPos = pos;
@@ -644,9 +759,10 @@ class BoardComponent extends PositionComponent
         );
         tileComp.add(
           ScaleEffect.to(
-            Vector2.all(1.0),
-            EffectController(duration: 0.55, curve: Curves.bounceOut),
-          )..onComplete = () {
+              Vector2.all(1.0),
+              EffectController(duration: 0.55, curve: Curves.bounceOut),
+            )
+            ..onComplete = () {
               activeAnimations--;
               if (activeAnimations == 0) {
                 _inputLocked = false;
@@ -664,6 +780,24 @@ class BoardComponent extends PositionComponent
     if (activeAnimations == 0) {
       _inputLocked = false;
     }
+  }
+
+  void _replaceBoardWithFreshBoard() {
+    final fresh = BoardGenerator.generate(
+      gameRef.levelConfig.availableGems,
+      layout: gameRef.levelConfig.boardLayout,
+    );
+    for (int r = 0; r < boardModel.rowCount; r++) {
+      for (int c = 0; c < boardModel.colCount; c++) {
+        final pos = GridPosition(r, c);
+        boardModel.set(pos, fresh.get(pos));
+      }
+    }
+
+    for (final tile in children.whereType<TileComponent>().toList()) {
+      tile.removeFromParent();
+    }
+    _spawnTiles();
   }
 
   // ── Custom Drawing ─────────────────────────────────────────────────────────
@@ -687,7 +821,7 @@ class BoardComponent extends PositionComponent
       ..strokeWidth = 2.0;
     canvas.drawRRect(bgRRect, borderPaint);
 
-    // Draw 8x8 subtle background slots for grid positions
+    // Draw subtle background slots for active grid positions.
     final cellPaint = Paint()
       ..color = const Color(0xFFFFFFFF).withOpacity(0.02)
       ..style = PaintingStyle.fill;
@@ -696,21 +830,110 @@ class BoardComponent extends PositionComponent
       ..color = const Color(0xFFE2B65B).withOpacity(0.12)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
+      
+    final markPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.4)
+      ..style = PaintingStyle.fill;
+      
+    final markBorderPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
 
-    for (int r = 0; r < BoardModel.rows; r++) {
-      for (int c = 0; c < BoardModel.cols; c++) {
+    for (int r = 0; r < boardModel.rowCount; r++) {
+      for (int c = 0; c < boardModel.colCount; c++) {
+        final pos = GridPosition(r, c);
+        if (!boardModel.isPlayable(pos)) continue;
+        
         final cellRect = Rect.fromLTWH(
           c * tileSize + 3,
           r * tileSize + 3,
           tileSize - 6,
           tileSize - 6,
         );
-        final cellRRect = RRect.fromRectAndRadius(cellRect, const Radius.circular(10));
+        final cellRRect = RRect.fromRectAndRadius(
+          cellRect,
+          const Radius.circular(10),
+        );
+        
         canvas.drawRRect(cellRRect, cellPaint);
         canvas.drawRRect(cellRRect, cellBorderPaint);
+        
+        // Render Clear Mark (Gold underlay)
+        final state = boardModel.getCellState(pos);
+        if (state != null && state.hasMark) {
+          final markRect = Rect.fromLTWH(
+            c * tileSize + 8,
+            r * tileSize + 8,
+            tileSize - 16,
+            tileSize - 16,
+          );
+          final markRRect = RRect.fromRectAndRadius(markRect, const Radius.circular(8));
+          canvas.drawRRect(markRRect, markPaint);
+          canvas.drawRRect(markRRect, markBorderPaint);
+        }
       }
     }
 
     super.render(canvas);
+    
+    // Render Clay Pots on top of tiles
+    for (int r = 0; r < boardModel.rowCount; r++) {
+      for (int c = 0; c < boardModel.colCount; c++) {
+        final pos = GridPosition(r, c);
+        final state = boardModel.getCellState(pos);
+        if (state != null && state.hasPot) {
+          _drawClayPot(canvas, c * tileSize, r * tileSize, state.potLayers);
+        }
+      }
+    }
+  }
+  
+  void _drawClayPot(Canvas canvas, double x, double y, int layers) {
+    final cx = x + tileSize / 2;
+    final cy = y + tileSize / 2;
+    final radius = tileSize * 0.4;
+    
+    final potPaint = Paint()
+      ..color = const Color(0xFFB5651D) // Terracotta brown
+      ..style = PaintingStyle.fill;
+      
+    final potBorderPaint = Paint()
+      ..color = const Color(0xFF5C3317) // Dark brown
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0;
+      
+    final potHighlightPaint = Paint()
+      ..color = const Color(0xFFD28C4A) // Lighter brown for highlight
+      ..style = PaintingStyle.fill;
+      
+    // Base shape (circle/oval)
+    canvas.drawCircle(Offset(cx, cy), radius, potPaint);
+    
+    // Highlight
+    final highlightPath = Path()
+      ..addArc(Rect.fromCircle(center: Offset(cx - radius * 0.2, cy - radius * 0.2), radius: radius * 0.5), 2.5, 1.5);
+    canvas.drawPath(highlightPath, Paint()..color = const Color(0x66FFFFFF)..style = PaintingStyle.stroke..strokeWidth = 2.0);
+    
+    // Crack layer 2 visually
+    if (layers == 1) {
+      final crackPaint = Paint()
+        ..color = const Color(0xFF3B1E08)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+        
+      final crackPath = Path()
+        ..moveTo(cx - radius * 0.5, cy - radius * 0.5)
+        ..lineTo(cx - radius * 0.1, cy - radius * 0.1)
+        ..lineTo(cx + radius * 0.3, cy - radius * 0.2)
+        ..lineTo(cx + radius * 0.5, cy + radius * 0.3)
+        ..moveTo(cx - radius * 0.1, cy - radius * 0.1)
+        ..lineTo(cx - radius * 0.3, cy + radius * 0.4);
+        
+      canvas.drawPath(crackPath, crackPaint);
+    }
+    
+    canvas.drawCircle(Offset(cx, cy), radius, potBorderPaint);
   }
 }

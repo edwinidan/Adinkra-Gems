@@ -39,14 +39,19 @@ class MatchFinder {
           }
 
           if (intersectPos != null) {
-            final combined = <GridPosition>{...h.positions, ...v.positions}.toList();
+            final combined = <GridPosition>{
+              ...h.positions,
+              ...v.positions,
+            }.toList();
 
-            resolved.add(MatchGroup(
-              positions: combined,
-              gemType: h.gemType,
-              specialCreated: SpecialGemType.bomb,
-              specialSpawnPosition: intersectPos,
-            ));
+            resolved.add(
+              MatchGroup(
+                positions: combined,
+                gemType: h.gemType,
+                specialCreated: SpecialGemType.bomb,
+                specialSpawnPosition: intersectPos,
+              ),
+            );
 
             usedHorizontal.add(h);
             usedVertical.add(v);
@@ -69,12 +74,14 @@ class MatchFinder {
           spawnPos = _chooseSpawnPos(h.positions, swapA, swapB);
         }
 
-        resolved.add(MatchGroup(
-          positions: h.positions,
-          gemType: h.gemType,
-          specialCreated: special,
-          specialSpawnPosition: spawnPos,
-        ));
+        resolved.add(
+          MatchGroup(
+            positions: h.positions,
+            gemType: h.gemType,
+            specialCreated: special,
+            specialSpawnPosition: spawnPos,
+          ),
+        );
       }
     }
 
@@ -92,12 +99,14 @@ class MatchFinder {
           spawnPos = _chooseSpawnPos(v.positions, swapA, swapB);
         }
 
-        resolved.add(MatchGroup(
-          positions: v.positions,
-          gemType: v.gemType,
-          specialCreated: special,
-          specialSpawnPosition: spawnPos,
-        ));
+        resolved.add(
+          MatchGroup(
+            positions: v.positions,
+            gemType: v.gemType,
+            specialCreated: special,
+            specialSpawnPosition: spawnPos,
+          ),
+        );
       }
     }
 
@@ -109,9 +118,9 @@ class MatchFinder {
   List<MatchGroup> _scanHorizontal(BoardModel board) {
     final matches = <MatchGroup>[];
 
-    for (int r = 0; r < BoardModel.rows; r++) {
+    for (int r = 0; r < board.rowCount; r++) {
       int c = 0;
-      while (c < BoardModel.cols) {
+      while (c < board.colCount) {
         final start = board.get(GridPosition(r, c));
         if (start == null) {
           c++;
@@ -120,7 +129,7 @@ class MatchFinder {
 
         final positions = [GridPosition(r, c)];
         int nc = c + 1;
-        while (nc < BoardModel.cols) {
+        while (nc < board.colCount) {
           final next = board.get(GridPosition(r, nc));
           if (next?.gemType == start.gemType) {
             positions.add(GridPosition(r, nc));
@@ -146,9 +155,9 @@ class MatchFinder {
   List<MatchGroup> _scanVertical(BoardModel board) {
     final matches = <MatchGroup>[];
 
-    for (int c = 0; c < BoardModel.cols; c++) {
+    for (int c = 0; c < board.colCount; c++) {
       int r = 0;
-      while (r < BoardModel.rows) {
+      while (r < board.rowCount) {
         final start = board.get(GridPosition(r, c));
         if (start == null) {
           r++;
@@ -157,7 +166,7 @@ class MatchFinder {
 
         final positions = [GridPosition(r, c)];
         int nr = r + 1;
-        while (nr < BoardModel.rows) {
+        while (nr < board.rowCount) {
           final next = board.get(GridPosition(nr, c));
           if (next?.gemType == start.gemType) {
             positions.add(GridPosition(nr, c));
@@ -197,8 +206,6 @@ class MatchFinder {
 
   /// Returns only the matches that involve [pos].
   List<MatchGroup> matchesAt(BoardModel board, GridPosition pos) {
-    return findMatches(board)
-        .where((m) => m.positions.contains(pos))
-        .toList();
+    return findMatches(board).where((m) => m.positions.contains(pos)).toList();
   }
 }

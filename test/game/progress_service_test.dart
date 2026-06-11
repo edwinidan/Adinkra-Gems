@@ -20,12 +20,18 @@ void main() {
     });
 
     test('unlockLevel only increases level progress', () async {
-      await ProgressService.unlockLevel(3);
+      await ProgressService.unlockLevel(3, maxLevel: 30);
       expect(await ProgressService.getHighestUnlockedLevel(), 3);
 
       // Should ignore lower level unlock
-      await ProgressService.unlockLevel(2);
+      await ProgressService.unlockLevel(2, maxLevel: 30);
       expect(await ProgressService.getHighestUnlockedLevel(), 3);
+    });
+
+    test('level progress is clamped to the available level count', () async {
+      await ProgressService.unlockLevel(31, maxLevel: 30);
+
+      expect(await ProgressService.getHighestUnlockedLevel(maxLevel: 30), 30);
     });
 
     test('saveScore updates only if it exceeds current best', () async {
@@ -59,12 +65,16 @@ void main() {
       await ProgressService.unlockLevel(5);
       await ProgressService.saveScore(1, 1000);
       await ProgressService.saveStars(1, 2);
+      await ProgressService.saveScore(30, 9000);
+      await ProgressService.saveStars(30, 3);
 
-      await ProgressService.clearAllProgress();
+      await ProgressService.clearAllProgress(levelCount: 30);
 
       expect(await ProgressService.getHighestUnlockedLevel(), 1);
       expect(await ProgressService.getBestScore(1), 0);
       expect(await ProgressService.getBestStars(1), 0);
+      expect(await ProgressService.getBestScore(30), 0);
+      expect(await ProgressService.getBestStars(30), 0);
     });
   });
 }

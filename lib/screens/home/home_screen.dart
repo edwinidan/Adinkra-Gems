@@ -70,40 +70,14 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     const Spacer(flex: 2),
 
-                    // ── Gem logo ──
-                    _GemLogo(),
-
-                    const SizedBox(height: 28),
-
-                    // ── Title ──
-                    const Text(
-                      'ADINKRA',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AdinkraTheme.darkCocoa,
-                        fontSize: 44,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 7,
-                      ),
-                    ),
-                    const Text(
-                      'GEMS',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AdinkraTheme.terracotta,
-                        fontSize: 38,
-                        fontWeight: FontWeight.w200,
-                        letterSpacing: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Match the Sacred Symbols',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AdinkraTheme.cocoa, fontSize: 13),
+                    // ── Branded logo image ──
+                    Image.asset(
+                      'assets/adinkra tile homescreen pnd.png',
+                      width: 364,
+                      fit: BoxFit.contain,
                     ),
 
-                    const Spacer(flex: 2),
+                    const Spacer(flex: 1),
 
                     // ── Buttons ──
                     _HomeButton(
@@ -155,72 +129,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
-// ─────────────────────────────────────────────
-// Animated gem logo
-// ─────────────────────────────────────────────
-class _GemLogo extends StatefulWidget {
-  @override
-  State<_GemLogo> createState() => _GemLogoState();
-}
 
-class _GemLogoState extends State<_GemLogo>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulse;
-  late Animation<double> _glow;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _glow = Tween<double>(
-      begin: 20,
-      end: 40,
-    ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _glow,
-      builder: (_, __) => Container(
-        width: 110,
-        height: 110,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const RadialGradient(
-            colors: [
-              AdinkraTheme.lightCream,
-              AdinkraTheme.warmGold,
-              AdinkraTheme.terracotta,
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AdinkraTheme.cocoa.withOpacity(0.3),
-              blurRadius: _glow.value,
-              spreadRadius: _glow.value * 0.3,
-            ),
-          ],
-        ),
-        child: const Icon(
-          Icons.diamond_rounded,
-          size: 60,
-          color: AdinkraTheme.darkCocoa,
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────
 // Home screen button

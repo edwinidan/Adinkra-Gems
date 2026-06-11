@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:flame/cache.dart';
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
@@ -10,7 +13,6 @@ import 'components/board_component.dart';
 import 'systems/level_controller.dart';
 
 import 'models/special_gem_type.dart';
-import '../../services/settings_service.dart';
 
 /// The root Flame Game class for Adinkra Gems.
 ///
@@ -34,14 +36,15 @@ class AdinkraGemsGame extends FlameGame {
 
   double _timerAccumulator = 0.0;
 
-  AdinkraGemsGame({
-    required this.levelConfig,
-    required this.levelController,
-  });
+  AdinkraGemsGame({required this.levelConfig, required this.levelController});
 
   // Direct Flame to search for assets from empty prefix so we can load full registered paths.
   @override
   final images = Images(prefix: '');
+
+  /// Make the Flame canvas transparent so the Flutter background shows through.
+  @override
+  Color backgroundColor() => const Color(0x00000000);
 
   /// Returns the preloaded sprite based on the gem type, special type, and tile version.
   Sprite? getSpriteFor({
@@ -64,23 +67,40 @@ class AdinkraGemsGame extends FlameGame {
 
     // 1. Preload all gem sprites into the map caches
     for (final gemType in GemType.values) {
-      gemSpritesV1[gemType] = await loadSprite(GemAssets.pathFor(gemType, version: 1));
-      gemSpritesV2[gemType] = await loadSprite(GemAssets.pathFor(gemType, version: 2));
-      gemSpritesHorizontal[gemType] = await loadSprite(GemAssets.horizontalPathFor(gemType));
-      gemSpritesVertical[gemType] = await loadSprite(GemAssets.verticalPathFor(gemType));
+      gemSpritesV1[gemType] = await loadSprite(
+        GemAssets.pathFor(gemType, version: 1),
+      );
+      gemSpritesV2[gemType] = await loadSprite(
+        GemAssets.pathFor(gemType, version: 2),
+      );
+      gemSpritesHorizontal[gemType] = await loadSprite(
+        GemAssets.horizontalPathFor(gemType),
+      );
+      gemSpritesVertical[gemType] = await loadSprite(
+        GemAssets.verticalPathFor(gemType),
+      );
     }
 
     // 2. Generate the starting board logic
-    boardModel = BoardGenerator.generate(levelConfig.availableGems);
+    boardModel = BoardGenerator.generate(
+      levelConfig.availableGems,
+      layout: levelConfig.boardLayout,
+      initialTiles: levelConfig.initialTiles,
+    );
 
     // 3. Calculate dynamic layout size based on screen bounds
     const double horizontalPadding = 16.0;
     final availableWidth = size.x - (horizontalPadding * 2);
-    final tileSize = (availableWidth / 8).floorToDouble();
+    final tileSize = math
+        .min(
+          (availableWidth / boardModel.colCount) * 1.1,
+          (size.y / boardModel.rowCount) * 0.98,
+        )
+        .floorToDouble();
 
     // 4. Instantiate and center the board component
-    final boardWidth = tileSize * 8;
-    final boardHeight = tileSize * 8;
+    final boardWidth = tileSize * boardModel.colCount;
+    final boardHeight = tileSize * boardModel.rowCount;
 
     final boardComponent = BoardComponent(
       boardModel: boardModel,
@@ -99,10 +119,9 @@ class AdinkraGemsGame extends FlameGame {
   void update(double dt) {
     super.update(dt);
 
-    // If level has a timer and game is active, update the countdown seconds
-    if (levelController.hasTimer && !levelController.isGameOver) {
+    if (levelController.canAdvanceTimer) {
       _timerAccumulator += dt;
-      if (_timerAccumulator >= 1.0) {
+      while (_timerAccumulator >= 1.0 && levelController.canAdvanceTimer) {
         _timerAccumulator -= 1.0;
         levelController.decrementTime();
       }

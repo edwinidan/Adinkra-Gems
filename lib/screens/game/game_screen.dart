@@ -5,9 +5,11 @@ import '../../app/theme.dart';
 import '../../app/woven_background.dart';
 import '../../game/adinkra_gems_game.dart';
 import '../../game/data/levels.dart';
+import '../../game/models/level_config.dart';
 import '../../game/systems/level_controller.dart';
 import '../../services/audio_service.dart';
 import '../../services/progress_service.dart';
+import '../../services/tutorial_service.dart';
 import 'game_hud.dart';
 import 'game_over_dialog.dart';
 
@@ -38,7 +40,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _initLevel(int level) {
-    final config = allLevels[level - 1];
+    final config = levelCatalog.requireByNumber(level);
     _savingProgress = false;
 
     // Clean up old controller if exists
@@ -51,6 +53,40 @@ class _GameScreenState extends State<GameScreen> {
       levelConfig: config,
       levelController: _levelController!,
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showTutorialHint(config);
+    });
+  }
+
+  Future<void> _showTutorialHint(LevelConfig config) async {
+    final hint = config.tutorialHint;
+    if (!mounted || hint == null || await TutorialService.hasSeen(config.id)) {
+      return;
+    }
+
+    _levelController?.pause();
+    _game?.pauseEngine();
+
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('LEVEL ${config.levelNumber}'),
+        content: Text(hint),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('GOT IT'),
+          ),
+        ],
+      ),
+    );
+
+    await TutorialService.markSeen(config.id);
+    _levelController?.resume();
+    _game?.resumeEngine();
   }
 
   @override
@@ -81,7 +117,12 @@ class _GameScreenState extends State<GameScreen> {
       if (stars < 1) stars = 1; // Minimum of 1 star if won
 
       // Persist player progress to SharedPreferences
-      await ProgressService.unlockLevel(level + 1);
+      if (level < levelCatalog.length) {
+        await ProgressService.unlockLevel(
+          level + 1,
+          maxLevel: levelCatalog.length,
+        );
+      }
       await ProgressService.saveScore(level, score);
       await ProgressService.saveStars(level, stars);
     } else {
@@ -107,7 +148,7 @@ class _GameScreenState extends State<GameScreen> {
           Navigator.pop(context); // Close dialog
           Navigator.pop(context); // Return to Map Select Screen
         },
-        onNextLevel: (level < allLevels.length)
+        onNextLevel: (level < levelCatalog.length)
             ? () {
                 Navigator.pop(context); // Close dialog
                 _loadNextLevel();
@@ -161,36 +202,17 @@ class _GameScreenState extends State<GameScreen> {
 
               // ── Board area ──
               Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 20,
                     vertical: 10,
                   ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      colors: [
-                        AdinkraTheme.cocoa.withOpacity(0.9),
-                        AdinkraTheme.darkCocoa,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    border: Border.all(
-                      color: AdinkraTheme.cocoa.withOpacity(0.45),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AdinkraTheme.cocoa.withOpacity(0.28),
-                        blurRadius: 24,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: GameWidget(game: _game!),
+                    child: GameWidget(
+                      game: _game!,
+                      backgroundBuilder: (context) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               ),
@@ -202,11 +224,23 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _showPauseMenu(BuildContext context) {
+    final controller = _levelController;
+    final game = _game;
+    if (controller == null || game == null || controller.isGameOver) return;
+
+    controller.pause();
+    game.pauseEngine();
+
     showDialog(
       context: context,
       barrierColor: Colors.black87,
+      barrierDismissible: false,
       builder: (_) => _PauseDialog(
-        onResume: () => Navigator.pop(context),
+        onResume: () {
+          controller.resume();
+          game.resumeEngine();
+          Navigator.pop(context);
+        },
         onQuit: () {
           Navigator.pop(context); // close dialog
           Navigator.pop(context); // go back to level select

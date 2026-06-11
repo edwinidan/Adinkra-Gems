@@ -35,11 +35,13 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
       _isLoading = true;
     });
 
-    final highestUnlocked = await ProgressService.getHighestUnlockedLevel();
+    final highestUnlocked = await ProgressService.getHighestUnlockedLevel(
+      maxLevel: levelCatalog.length,
+    );
     final scores = <int, int>{};
     final stars = <int, int>{};
 
-    for (int i = 1; i <= allLevels.length; i++) {
+    for (int i = 1; i <= levelCatalog.length; i++) {
       scores[i] = await ProgressService.getBestScore(i);
       stars[i] = await ProgressService.getBestStars(i);
     }
@@ -131,7 +133,7 @@ class _LevelSelectScreenState extends State<LevelSelectScreen> {
                               mainAxisSpacing: 20,
                               childAspectRatio: 0.88,
                             ),
-                        itemCount: allLevels.length,
+                        itemCount: levelCatalog.length,
                         itemBuilder: (context, index) {
                           final level = index + 1;
                           final isUnlocked = level <= _highestUnlockedLevel;

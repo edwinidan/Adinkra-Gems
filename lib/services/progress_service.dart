@@ -10,17 +10,19 @@ class ProgressService {
   static const String _bestStarsPrefix = 'bestStars_level_';
 
   /// Returns the highest unlocked level index (1-based, default: 1).
-  static Future<int> getHighestUnlockedLevel() async {
+  static Future<int> getHighestUnlockedLevel({int? maxLevel}) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_unlockedKey) ?? 1;
+    final unlocked = prefs.getInt(_unlockedKey) ?? 1;
+    return maxLevel == null ? unlocked : unlocked.clamp(1, maxLevel);
   }
 
   /// Marks a level as unlocked (only updates if [level] is higher than current progress).
-  static Future<void> unlockLevel(int level) async {
+  static Future<void> unlockLevel(int level, {int? maxLevel}) async {
     final prefs = await SharedPreferences.getInstance();
     final currentUnlocked = prefs.getInt(_unlockedKey) ?? 1;
-    if (level > currentUnlocked) {
-      await prefs.setInt(_unlockedKey, level);
+    final boundedLevel = maxLevel == null ? level : level.clamp(1, maxLevel);
+    if (boundedLevel > currentUnlocked) {
+      await prefs.setInt(_unlockedKey, boundedLevel);
     }
   }
 
@@ -59,10 +61,10 @@ class ProgressService {
   }
 
   /// Clears all stored level progress and scores (reverts to Level 1 unlocked).
-  static Future<void> clearAllProgress() async {
+  static Future<void> clearAllProgress({int levelCount = 30}) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_unlockedKey);
-    for (int i = 1; i <= 10; i++) {
+    for (int i = 1; i <= levelCount; i++) {
       await prefs.remove('$_bestScorePrefix$i');
       await prefs.remove('$_bestStarsPrefix$i');
     }

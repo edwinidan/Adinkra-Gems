@@ -41,3 +41,27 @@ final class CollectObjective extends LevelObjective {
   String toString() =>
       'CollectObjective(gemType: $gemType, count: $count)';
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Clear Mark objective
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Player must clear all marked cells on the board.
+final class ClearMarkObjective extends LevelObjective {
+  const ClearMarkObjective();
+
+  @override
+  String toString() => 'ClearMarkObjective()';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Clear Blocker objective
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Player must destroy all Clay Pot blockers.
+final class ClearBlockerObjective extends LevelObjective {
+  const ClearBlockerObjective();
+
+  @override
+  String toString() => 'ClearBlockerObjective()';
+}

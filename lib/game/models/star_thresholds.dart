@@ -29,6 +29,8 @@ class StarThresholds {
     return 0;
   }
 
+  bool get isOrdered => oneStar <= twoStar && twoStar <= threeStar;
+
   @override
   String toString() =>
       'StarThresholds(1★: $oneStar, 2★: $twoStar, 3★: $threeStar)';
