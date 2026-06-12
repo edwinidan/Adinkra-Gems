@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 import '../../app/theme.dart';
 import '../../app/woven_background.dart';
@@ -86,6 +87,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await SettingsService.setTileVersion(newVersion);
                 setState(() => _tileVersion = newVersion);
               },
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              'Developer',
+              style: TextStyle(
+                color: AdinkraTheme.terracotta,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                FirebaseCrashlytics.instance.crash();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Simulate Crash',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
             ),
             const SizedBox(height: 32),
             const Text(

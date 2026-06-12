@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "448303495496",
+    "project_id": "adinkra-gems",
+    "storage_bucket": "adinkra-gems.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448303495496:android:08df9f534dfeedd6561b7d",
+        "android_client_info": {
+          "package_name": "com.adinkragems.adinkra_gems"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnHq8-j_S93TpYaiUUc924AbYwCT1h5Eg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
